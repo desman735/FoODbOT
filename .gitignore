@@ -106,5 +106,9 @@ venv.bak/
 # VS Code files
 .vscode
 
+#eclipse project files
+.project
+.pydevproject
+
 # bot setup files
 mutableSettings.ini
