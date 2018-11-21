@@ -105,3 +105,6 @@ venv.bak/
 
 # VS Code files
 .vscode
+
+# bot setup files
+mutableSettings.ini
