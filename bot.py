@@ -28,7 +28,7 @@ async def on_message(message):
         return
 
     if str(message.author) in SETTINGS.admins:
-        action = HANDLER.parse_message(message)
+        action = HANDLER.parse_message(message, SETTINGS)
         action.client = CLIENT
         action.response_channel = message.channel
         await action.run_action()

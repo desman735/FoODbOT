@@ -19,19 +19,20 @@ class MessageHandler:
             self.server = server
             self.command_character = command_character
 
-    def parse_message(self, message) -> actions.ActionInterface:
+    def parse_message(self, message, settings) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
         print('Message:', message.content)
         if self.server:
             self.messageEmojiTester(message)
-            pass
+
         if self.server and message.content.startswith(self.command_character):
             # todo: return different actions in different cases
             # todo: parse for amount of days. Some other time structure?
-            return actions.EmojiCounter(self.server.channels, 7)
+            return actions.EmojiCounter(self.server.channels, 
+                                        settings.days_to_count)
 
         return actions.ActionInterface()  # todo: or None?
-    
+
     def messageEmojiTester(self, message):
         """Looks for custom emoji, and prints some info about it to the command line"""
         messageEmojiPattern = re.compile("(<:?[a-zA-Z]+:?[0-9]+>)")
