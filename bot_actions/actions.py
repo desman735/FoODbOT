@@ -1,4 +1,5 @@
 '''File to describe the interface for action'''
+from datetime import datetime, timedelta
 from discord import ChannelType
 
 
@@ -16,13 +17,13 @@ class ActionInterface:
 class EmojiCounter(ActionInterface):
     '''Class, that counts emoji usage for a some period of time'''
     channels = []  # Should be Discord.py channels
-    days = 7
+    stoptime = None
 
-    def __init__(self, channels, days):
+    def __init__(self, channels, days_to_count):
         for channel in channels:
             if channel.type == ChannelType.text:  # filter channels by type
                 self.channels.append(channel)
-        self.days = days
+        self.stoptime = datetime.utcnow() - timedelta(days=days_to_count)
 
     async def run_action(self):
         '''Method to run async action'''
