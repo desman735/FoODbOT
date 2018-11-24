@@ -28,9 +28,23 @@ async def on_message(message):
         return
     
     if str(message.author) in PARSER.admins:
-        action = HANDLER.parse_message(message.content)
+        action = HANDLER.parse_message(message)#.content)
         action.client = CLIENT
         action.response_channel = message.channel
         await action.run_action()
+        
+@CLIENT.event
+async def on_reaction_add(reaction,user):
+    if reaction.custom_emoji:
+        print("name: {}, id: {}, user: {}, server: {}, channel: {}, adding: True".format(reaction.emoji.name, reaction.emoji.id, user, reaction.message.server,reaction.message.channel))
+    else:
+        print("emoji: {}".format(reaction.emoji))
+
+@CLIENT.event
+async def on_reaction_remove(reaction,user):
+    if reaction.custom_emoji:
+        print("name: {}, id: {}, user: {}, server: {}, channel: {}, adding: False".format(reaction.emoji.name, reaction.emoji.id, user, reaction.message.server,reaction.message.channel))
+    else:
+        print("emoji: {}".format(reaction.emoji))
 
 CLIENT.run(PARSER.botToken)
