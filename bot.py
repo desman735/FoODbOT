@@ -26,8 +26,8 @@ async def on_message(message):
     if not HANDLER:
         print('Error! No message handler found!')
         return
-    full_name = message.author.name + '#' + message.author.discriminator
-    if full_name in PARSER.admins:
+    
+    if str(message.author) in PARSER.admins:
         action = HANDLER.parse_message(message.content)
         action.client = CLIENT
         action.response_channel = message.channel
