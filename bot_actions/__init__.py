@@ -7,17 +7,14 @@ from . import actions
 
 class MessageHandler:
     '''Class to handle commands to the bot'''
-    command_character = '!'
-    server = None  # should be discord sesrver
 
     def __init__(self, command_character, server=None):
         '''
         server is discord server
         command_character is a string
         '''
-        if isinstance(server, Server):
-            self.server = server
-            self.command_character = command_character
+        self.server = server
+        self.command_character = command_character
 
     def parse_message(self, message, settings) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
