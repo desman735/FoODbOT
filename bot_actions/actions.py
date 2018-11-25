@@ -1,6 +1,7 @@
 '''File to describe the interface for action'''
-from datetime import datetime, timedelta
+from datetime import timedelta
 from discord import ChannelType
+from . import functions
 
 
 # pylint: disable=too-few-public-methods
@@ -12,18 +13,25 @@ class ActionInterface:
     async def run_action(self):
         '''Method to run async action'''
         pass
+# pylint: enable=too-few-public-methods
 
 
 class EmojiCounter(ActionInterface):
     '''Class, that counts emoji usage for a some period of time'''
     channels = []  # Should be Discord.py channels
-    stoptime = None
+    days_to_count = None
 
     def __init__(self, channels, days_to_count):
         for channel in channels:
             if channel.type == ChannelType.text:  # filter channels by type
                 self.channels.append(channel)
-        self.stoptime = datetime.utcnow() - timedelta(days=days_to_count)
+
+        self.days_to_count = days_to_count
+
+    def handle_message(self, message):
+        '''Updates object according to the passed message'''
+        #todo: make it
+        pass
 
     async def run_action(self):
         '''Method to run async action'''
@@ -31,10 +39,18 @@ class EmojiCounter(ActionInterface):
             print('No client or responce channel to answer')
             return
 
-        response = "Channels:"
+        result = 'Counting emojis, do not disturb...'
+        print(result)
+        result_msg = await self.client.send_message(self.response_channel,
+                                                    result)
+
+        check_time = timedelta(days=self.days_to_count)
+
         for channel in self.channels:
-            response = response + " " + channel.name
+            print('Working with', channel)
+            await functions.handle_messages(self.client, channel, check_time,
+                                            self.handle_message)
 
-        await self.client.send_message(self.response_channel, response)
-
-# pylint: enable=too-few-public-methods
+        result = 'Finished!'
+        print(result)
+        await self.client.edit_message(result_msg, result)
