@@ -33,12 +33,12 @@ class EmojiCounter(ActionInterface):
         self.days_to_count = days_to_count
 
     def handle_message(self, message):
-        '''Updates object according to the passed message'''
+        '''Called once per message in the range'''
         #todo: make it
         pass
 
     async def run_action(self):
-        '''Method to run async action'''
+        '''Should be called once per bot request'''
         if not self.response_channel or not self.client:
             print('No client or responce channel to answer')
             return

@@ -7,6 +7,9 @@ SETTINGS = settingsParser()
 CLIENT = Client()
 HANDLER = MessageHandler(SETTINGS.commandCharacter)
 
+#todo: check emoji group before counting
+#todo: admins by roless
+
 
 @CLIENT.event
 async def on_ready():
