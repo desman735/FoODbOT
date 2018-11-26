@@ -1,11 +1,11 @@
 """Script to start the FoODbOT"""
 from discord import Client
-from Settingsparser import settingsParser
+from Settingsparser import SettingsParser
 from bot_actions import MessageHandler
 
-SETTINGS = settingsParser()
+SETTINGS = SettingsParser()
 CLIENT = Client()
-HANDLER = MessageHandler(SETTINGS.commandCharacter)
+HANDLER = MessageHandler(SETTINGS.command_character)
 
 #todo: check emoji group before counting
 #todo: admins by roless
@@ -60,4 +60,4 @@ async def on_reaction_remove(reaction, user):
     else:
         print("emoji: {}".format(reaction.emoji))
 
-CLIENT.run(SETTINGS.botToken)
+CLIENT.run(SETTINGS.bot_token)

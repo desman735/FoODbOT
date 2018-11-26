@@ -10,7 +10,7 @@ The other source contains stuff that benefits from being separate during testing
 import configparser
 
 
-class settingsParser(object):
+class SettingsParser(object):
     """
     Parses both settings files
     """
@@ -20,23 +20,25 @@ class settingsParser(object):
     def __init__(self):
         config = configparser.ConfigParser()
         config.read('settings.ini')
-        self.commandCharacter = config['Default']['commandcharacter']
+        self.command_character = config['Default']['commandcharacter']
         self.admins = config['Default']['admins']
         if 'days_to_count' in config['Default']:
             self.days_to_count = int(config['Default']['days_to_count'])
 
-        mutableConfig = configparser.ConfigParser()
-        mutableConfig.read('mutableSettings.ini')
-        self.botToken = mutableConfig['Default']['Bottoken']
-        
-def loadNewSettings():
+        mutable_config = configparser.ConfigParser()
+        mutable_config.read('mutableSettings.ini')
+        self.bot_token = mutable_config['Default']['Bottoken']
+
+def load_new_settings():
+    """A script to set up both settings files"""
     config=configparser.ConfigParser()
     config['Default'] = {'CommandCharacter':'!',
-                         'Admins':['Desman735#0679','KaTaai#9096']}
+                         'Admins':['Desman735#0679','KaTaai#9096'],
+                         'days_to_count':'7'}
     with open('settings.ini', 'w') as configfile:
         config.write(configfile)
-     
-    mutableConfig=configparser.ConfigParser()
-    mutableConfig['Default'] = {'BotToken':''}
+
+    mutable_config=configparser.ConfigParser()
+    mutable_config['Default'] = {'BotToken':''}
     with open('mutableSettings.ini', 'w') as configfile:
-        mutableConfig.write(configfile)
+        mutable_config.write(configfile)
