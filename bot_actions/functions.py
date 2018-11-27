@@ -1,7 +1,7 @@
 '''File, that contains helper functions for bot'''
 from datetime import datetime
 
-async def handle_messages(client, channel, check_time, handler):
+async def handle_messages(client, channel, check_time, handler, container):
     '''
     Runs handler on every message from channel between start_time and stop_time
     '''
@@ -19,7 +19,7 @@ async def handle_messages(client, channel, check_time, handler):
             start = msg
             start_time = msg.timestamp
             if start_time > stop_time:
-                handler(msg)
+                handler(msg,container) #container =
             else:
                 break  # found message after stop_time
 
