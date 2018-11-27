@@ -27,7 +27,8 @@ class MessageHandler:
             """The branche that gets called when there is a command character at the start."""
             # todo: return different actions in different cases
             # todo: parse for amount of days. Some other time structure?
-            return actions.EmojiCounter(self.server.channels, 
+            if message.content[1:].startswith("countEmoji"):
+                return actions.EmojiCounter(self.server.channels, 
                                         settings.days_to_count)
 
         return actions.ActionInterface()  # todo: or None?
