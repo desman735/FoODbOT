@@ -85,17 +85,15 @@ class EmojiCounter(ActionInterface):
         for channel in self.channels:
             print('Working with', channel)
             await functions.handle_messages(self.client, channel, check_time,
-                                            self.count_emoji_in_messages,emoji_dict)
+                                            self.count_emoji_in_messages,
+                                            emoji_dict)
 
-        result = 'Finished!'
-        print(result)
-        await self.client.edit_message(result_msg, result)
-        output = "We found the following emoji:\n"
-        #print(self.emoji_dict)
-        for k,v in emoji_dict.items():
-            output += "emoji: {} {} times.\n".format(k,v)
+        print('Finished!')
+        output = "We found the following emojis:\n"
+        # print(self.emoji_dict)
+        for emoji, amount in sorted(emoji_dict.items(), key=lambda p: p[1]):
+            output += "emoji {} was used {} times.\n".format(emoji, amount)
 
-        await self.client.send_message(self.response_channel,
-                                                    output)
-
-    
+        await self.client.edit_message(result_msg, output)
+        # I guess, it'll be better to do in one message
+        # await self.client.send_message(self.response_channel, output)
