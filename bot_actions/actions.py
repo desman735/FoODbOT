@@ -36,26 +36,37 @@ class EmojiCounter(ActionInterface):
 
     def count_emoji_in_messages(self, message, container):
         '''Called once per message in the range'''
-        #print("Message text: \"{}\", timestamp: \"{}\"".format(message.content,message.timestamp))
+        # print("Message text: \"{}\", timestamp: \"{}\"".format(message.content,message.timestamp))
         message_emoji_pattern = re.compile("(<:?[a-zA-Z]+:?[0-9]+>)")
-        results=message_emoji_pattern.findall(message.content)
-        if results:
-            for result in results:
-                if result in message.server.emojis:
-                    if result in container.keys():
-                        container[result] += 1
-                    else:
-                        container[result] = 1
-                    #add to the container
+        emojis_str = message_emoji_pattern.findall(message.content)
+
+        for emoji_str in emojis_str:
+            # split -> ['<', 'name', 'id>']
+            emoji_id = emoji_str.split(':')[2][:-1]
+
+            # Try to find emoji in server emojis by id
+            # Get array of all emojis with parsed id and get first element
+            # None (default value) in case nothing is found
+            emoji = next((e for e in message.server.emojis if e.id == emoji_id), None)
+
+            # todo: maybe, it's better to:
+            # 1) cache all server emoji on action start
+            # 2) use something like if emoji_str in str(message.server.emojis)
+
+            if emoji:
+                if emoji in container.keys():
+                    container[emoji] += 1
+                else:
+                    container[emoji] = 1
+                # add to the container
 
         if message.reactions:
             for reaction in message.reactions:
                 if reaction.custom_emoji:
-                    if str(reaction.emoji) in container.keys():
-                        container[str(reaction.emoji)] += reaction.count
+                    if reaction.emoji in container.keys():
+                        container[reaction.emoji] += reaction.count
                     else:
-                        container[str(reaction.emoji)] = reaction.count
-#        pass
+                        container[reaction.emoji] = reaction.count
 
     async def run_action(self):
         '''Should be called once per bot request'''
@@ -86,3 +97,5 @@ class EmojiCounter(ActionInterface):
 
         await self.client.send_message(self.response_channel,
                                                     output)
+
+    
