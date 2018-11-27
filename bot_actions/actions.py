@@ -91,6 +91,7 @@ class EmojiCounter(ActionInterface):
         print('Finished!')
         output = "We found the following emojis:\n"
         # print(self.emoji_dict)
+        # To change the sorting order, add reverse=True to the sorted()
         for emoji, amount in sorted(emoji_dict.items(), key=lambda p: p[1]):
             output += "emoji {} was used {} times.\n".format(emoji, amount)
 
