@@ -19,13 +19,20 @@ class SettingsParser:
 
     def __init__(self):
         self.days_to_count = 7
+        self.characters_limit = 2000
 
         config = configparser.ConfigParser()
         config.read('settings.ini')
+
+        # required settings
         self.command_character = config['Default']['commandcharacter']
         self.admins = config['Default']['admins']
+
+        # optional settings
         if 'days_to_count' in config['Default']:
             self.days_to_count = int(config['Default']['days_to_count'])
+        if 'charaters_limit' in config['Default']:
+            self.characters_limit = int(config['Default']['charaters_limit'])
 
         mutable_config = configparser.ConfigParser()
         mutable_config.read('mutableSettings.ini')

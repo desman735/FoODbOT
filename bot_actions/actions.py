@@ -13,6 +13,7 @@ class ActionInterface:
     def __init__(self):
         self.response_channel = None
         self.client = None
+        self.characters_limit = 1000  # just in case
 
     async def run_action(self):
         '''Method to run async action'''
