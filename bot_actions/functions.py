@@ -11,15 +11,15 @@ async def handle_messages(client, channel, check_time, handler, container):
 
     while start_time > stop_time:
         is_empty = True  # if there is any messages between start and stop
-        # todo: look for a better way to checl it
+        # todo: look for a better way to check it
 
         async for msg in client.logs_from(channel, before=start,
                                           after=stop_time):
             is_empty = False
             start = msg
             start_time = msg.timestamp
-            if start_time > stop_time:
-                handler(msg,container) #container =
+            if start_time > stop_time:  # todo: should it be checked?
+                handler(msg, container)  # container =
             else:
                 break  # found message after stop_time
 

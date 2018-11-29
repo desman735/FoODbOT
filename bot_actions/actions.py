@@ -34,9 +34,11 @@ class EmojiCounter(ActionInterface):
 
         self.days_to_count = days_to_count
 
-    def count_emoji_in_messages(self, message, container):
+    @staticmethod
+    def count_emoji_in_messages(message, container):
         '''Called once per message in the range'''
-        # print("Message text: \"{}\", timestamp: \"{}\"".format(message.content,message.timestamp))
+        # print("Message text: \"{}\", \
+        #       timestamp: \"{}\"".format(message.content, message.timestamp))
         message_emoji_pattern = re.compile("(<:?[a-zA-Z]+:?[0-9]+>)")
         emojis_str = message_emoji_pattern.findall(message.content)
 
@@ -47,7 +49,9 @@ class EmojiCounter(ActionInterface):
             # Try to find emoji in server emojis by id
             # Get array of all emojis with parsed id and get first element
             # None (default value) in case nothing is found
-            emoji = next((e for e in message.server.emojis if e.id == emoji_id), None)
+            emoji = next((e for e in
+                          message.server.emojis if e.id == emoji_id),
+                         None)
 
             # todo: maybe, it's better to:
             # 1) cache all server emoji on action start

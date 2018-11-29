@@ -7,8 +7,8 @@ SETTINGS = SettingsParser()
 CLIENT = Client()
 HANDLER = MessageHandler(SETTINGS.command_character)
 
-#todo: check emoji group before counting
-#todo: admins by roless
+# todo: check emoji group before counting
+# todo: admins by roles
 
 
 @CLIENT.event
