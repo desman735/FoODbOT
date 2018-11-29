@@ -16,9 +16,10 @@ class SettingsParser:
     """
     Parses both settings files
     """
-    days_to_count = 7
 
     def __init__(self):
+        self.days_to_count = 7
+        
         config = configparser.ConfigParser()
         config.read('settings.ini')
         self.command_character = config['Default']['commandcharacter']
