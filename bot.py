@@ -17,10 +17,6 @@ async def on_ready():
     print('FoODbOT started as a', CLIENT.user.name)
     print('Bot ID is', CLIENT.user.id)
     print('------')
-    if CLIENT.servers:
-        HANDLER.server = list(CLIENT.servers)[0]
-    else:
-        print('Error! Not found any servers!')
 
 
 @CLIENT.event
