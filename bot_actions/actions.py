@@ -1,4 +1,4 @@
-'''File to describe the interface for action'''
+'''File to describe the interface for action and list of actions'''
 from datetime import timedelta
 import re
 
@@ -95,11 +95,24 @@ class EmojiCounter(ActionInterface):
 
         print('Finished!')
         output = "We found the following emojis:\n"
-        # print(self.emoji_dict)
+        await self.client.edit_message(result_msg, output)
+
+        output = ""
         # To change the sorting order, add reverse=True to the sorted()
         for emoji, amount in sorted(emoji_dict.items(), key=lambda p: p[1]):
-            output += "emoji {} was used {} times.\n".format(emoji, amount)
+            line = "Emoji {} was used {} times.\n".format(emoji, amount)
 
-        await self.client.edit_message(result_msg, output)
-        # I guess, it'll be better to do in one message
-        # await self.client.send_message(self.response_channel, output)
+            # Send message, if line will be too long after concat
+            if len(output) + len(line) > self.characters_limit:
+                output += "Whew..."
+                await self.client.send_message(self.response_channel,
+                                               output)
+                output = ""
+
+            output += line
+
+        # Send what's left after cycle
+        if output:
+            output += 'The end!'
+            await self.client.send_message(self.response_channel,
+                                           output)
