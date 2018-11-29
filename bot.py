@@ -1,6 +1,6 @@
 """Script to start the FoODbOT"""
 from discord import Client
-from Settingsparser import SettingsParser
+from settings_parser import SettingsParser
 from bot_actions import MessageHandler
 
 SETTINGS = SettingsParser()
