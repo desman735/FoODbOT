@@ -50,7 +50,7 @@ class EmojiCounter(ActionInterface):
         '''Called once per message in the range'''
         # print("Message text: \"{}\", \
         #       timestamp: \"{}\"".format(message.content, message.timestamp))
-        message_emoji_pattern = re.compile("(<:?[a-zA-Z]+:?[0-9]+>)")
+        message_emoji_pattern = re.compile("(<:?[a-zA-Z0-9]+:?[0-9]+>)")
         emojis_str = message_emoji_pattern.findall(message.content)
 
         for emoji_str in emojis_str:
