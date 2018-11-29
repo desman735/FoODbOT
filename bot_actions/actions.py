@@ -36,6 +36,15 @@ class EmojiCounter(ActionInterface):
         self.days_to_count = days_to_count
 
     @staticmethod
+    def get_server_emoji_dict(server):
+        '''returns the dictionary <emoji: 0> with all emojis from the server'''
+        result = dict()
+        for emoji in server.emojis:
+            result[emoji] = 0
+
+        return result
+
+    @staticmethod
     def count_emoji_in_messages(message, container):
         '''Called once per message in the range'''
         # print("Message text: \"{}\", \
@@ -86,7 +95,8 @@ class EmojiCounter(ActionInterface):
 
         check_time = timedelta(days=self.days_to_count)
 
-        emoji_dict = dict()
+        emoji_dict = self.get_server_emoji_dict(self.response_channel.server)
+
         for channel in self.channels:
             print('Working with', channel)
             await functions.handle_messages(self.client, channel, check_time,
