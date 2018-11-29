@@ -3,6 +3,7 @@ from datetime import timedelta
 import re
 
 from discord import ChannelType
+from discord import errors
 from . import functions
 
 
@@ -99,10 +100,12 @@ class EmojiCounter(ActionInterface):
 
         for channel in self.channels:
             print('Working with', channel)
-            await functions.handle_messages(self.client, channel, check_time,
-                                            self.count_emoji_in_messages,
-                                            emoji_dict)
-
+            try:
+                await functions.handle_messages(self.client, channel, check_time,
+                                                self.count_emoji_in_messages,
+                                                emoji_dict)
+            except errors.Forbidden:
+                print("We have no access to {}".format(channel))
         print('Finished!')
         output = "We found the following emojis:\n"
         await self.client.edit_message(result_msg, output)
