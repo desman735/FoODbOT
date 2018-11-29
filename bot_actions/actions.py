@@ -112,7 +112,12 @@ class EmojiCounter(ActionInterface):
 
         output = ""
         # To change the sorting order, add reverse=True to the sorted()
-        for emoji, amount in sorted(emoji_dict.items(), key=lambda p: p[1]):
+
+        emojis = list(emoji_dict.items())  # [(emoji, amout)]
+        # sort by amount, in increasing order
+        emojis.sort(key=lambda emoji_tuple: emoji_tuple[1], reverse=False)
+
+        for emoji, amount in emojis:
             line = "Emoji {} was used {} times.\n".format(emoji, amount)
 
             # Send message, if line will be too long after concat
