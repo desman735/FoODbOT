@@ -26,7 +26,7 @@ async def on_message(message):
         print('Error! No message handler found!')
         return
 
-    if str(message.author) in SETTINGS.admins:
+    if str(message.author) in SETTINGS.admins or message.author.server_permissions.administrator:
         action = HANDLER.parse_message(message, SETTINGS)
         action.client = CLIENT
         action.response_channel = message.channel
