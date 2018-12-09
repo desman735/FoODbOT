@@ -47,5 +47,5 @@ class SettingsParser:
         self.animated_emoji_dict= dict()
         for k in mutable_config['animated-emoji']:
             self.animated_emoji_dict[k] = mutable_config['animated-emoji'][k]
-        print(self.animated_emoji_dict)
+
 # pylint: enable=too-few-public-methods

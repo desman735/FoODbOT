@@ -30,11 +30,12 @@ class MessageHandler:
 
             # todo: return different actions in different cases
             # todo: parse for amount of days. Some other time structure?
-            ActionDict={"countEmoji":actions.EmojiCounter(message.server.channels,
-                                            settings.days_to_count),
+            print(settings.days_to_count)
+            action_dict={"countEmoji":actions.EmojiCounter(message.server.channels,
+                                            settings.days_to_count,settings.animated_emoji_dict)
             }
-            if message.content[1:].split(" ")[0] in ActionDict.keys():
-                return ActionDict[message.content[1:].split(" ")[0]]
+            if message.content[1:].split(" ")[0] in action_dict.keys():
+                return action_dict[message.content[1:].split(" ")[0]]
 #             if message.content[1:].startswith("countEmoji"):
 #                 return actions.EmojiCounter(message.server.channels,
 #                                             settings.days_to_count)
