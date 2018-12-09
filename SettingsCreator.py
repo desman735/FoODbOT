@@ -35,8 +35,18 @@ def load_new_settings_files():
             mutable_config['Default']['BotToken'] = ''
     else:
         mutable_config['Default'] = {'BotToken': ''}
+
+    mutable_config.optionxform=str
+    if 'animated_emoji' in mutable_config:
+        pass
+    else:
+        mutable_config['animated-emoji'] = {"Stand Still Stay Silent": [":tuuriahhumm:",":sooffended:"],
+                                            'SSSSDev':[':465993384570650634:']}
     with open('mutableSettings.ini', 'w') as configfile:
         mutable_config.write(configfile)
+
+    if 'animated_emoji_list' not in mutable_config:
+        mutable_config['animated_emoji_list'] = dict()
 
 if __name__ == '__main__':
     load_new_settings_files()

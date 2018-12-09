@@ -23,8 +23,8 @@ class SettingsParser:
         try:
             self.get_settings()
         except KeyError:
-            print("An error occurred while loading the settings\n"+
-                  "Updating settings file")
+            print("An error occurred while loading the animated_emoji_dict\n"+
+                  "Updating animated_emoji_dict file")
             SettingsCreator.load_new_settings_files()
             self.get_settings()
 
@@ -41,7 +41,11 @@ class SettingsParser:
         self.characters_limit = int(config['Default']['characters_limit'])
 
         mutable_config = configparser.ConfigParser()
+        mutable_config.optionxform=str
         mutable_config.read('mutableSettings.ini')
-        self.bot_token = mutable_config['Default']['Bottoken']
-
+        self.bot_token = mutable_config['Default']['bottoken']
+        self.animated_emoji_dict= dict()
+        for k in mutable_config['animated-emoji']:
+            self.animated_emoji_dict[k] = mutable_config['animated-emoji'][k]
+        print(self.animated_emoji_dict)
 # pylint: enable=too-few-public-methods

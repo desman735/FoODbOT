@@ -25,10 +25,11 @@ class ActionInterface:
 class EmojiCounter(ActionInterface):
     '''Class, that counts emoji usage for a some period of time'''
 
-    def __init__(self, channels, days_to_count):
+    def __init__(self, channels, days_to_count, animated_emoji_dict):
         super().__init__()
         self.channels = []  # Should be Discord.py channels
         self.days_to_count = None
+        self.animated_emoji_dict=animated_emoji_dict
 
         for channel in channels:
             if channel.type == ChannelType.text:  # filter channels by type
@@ -118,20 +119,67 @@ class EmojiCounter(ActionInterface):
         # sort by amount, in increasing order
         emojis.sort(key=lambda emoji_tuple: emoji_tuple[1], reverse=False)
 
+        if self.channels[0].server.name not in self.animated_emoji_dict.keys():
+            self.animated_emoji_dict[self.channels[0].server.name]=[]
         for emoji, amount in emojis:
-            line = "Emoji {} was used {} times.\n".format(emoji, amount)
+            print("{} & {} & {} & {}".format(
+                str(emoji),
+                str(emoji).split(":")[1],
+                self.channels[0].server.name,
+                self.animated_emoji_dict[self.channels[0].server.name]))
 
-            # Send message, if line will be too long after concat
-            if len(output) + len(line) > self.characters_limit:
-                output += "Whew..."
-                await self.client.send_message(self.response_channel,
-                                               output)
-                output = ""
+            if emoji.name not in str(self.animated_emoji_dict[self.channels[0].server.name]):
+                line = "Emoji {} was used {} times.\n".format(emoji, amount)
 
-            output += line
+                # Send message, if line will be too long after concat
+                if len(output) + len(line) > self.characters_limit:
+                    output += "Whew..."
+                    await self.client.send_message(self.response_channel,
+                                                   output)
+                    output = ""
+
+                output += line
 
         # Send what's left after cycle
         if output:
             output += 'The end!'
             await self.client.send_message(self.response_channel,
                                            output)
+
+# pylint: disable=too-few-public-methods
+class AnimatedEmojiLister(ActionInterface):
+    '''Class that collects the animated emoji'''
+
+    def __init__(self, message, animated_emoji_dict):
+        super().__init__()
+        self.message=message
+        self.animated_emoji_dict=animated_emoji_dict
+
+    async def run_action(self):
+        '''Method to run async action'''
+        if self.message.server not in self.animated_emoji_dict.keys():
+            self.animated_emoji_dict[self.message.server]=[]
+
+        if len(self.message.content.split(" "))>=2:
+            print(self.message.content+"\n"+self.message.content.split(" ")[1])
+            if self.message.content.split(" ")[1]=="add":
+                for emoji in self.message.content.split(" ")[2:]:
+                    if emoji not in self.animated_emoji_dict[self.message.server]:
+                        self.animated_emoji_dict[self.message.server].append(emoji)
+                await self.client.send_message(self.message.channel,"Added to the list")
+            elif self.message.content.split(" ")[1]=="remove":
+                for emoji in self.message.content.split(" ")[2:]:
+                    if emoji in self.animated_emoji_dict[self.message.server]:
+                        self.animated_emoji_dict[self.message.server].remove(emoji)
+                await self.client.send_message(self.message.channel,"Removed from the list")
+            elif self.message.content.split(" ")[1]=="print":
+                print("Hi")
+                if self.animated_emoji_dict[self.message.server]:
+                    result = "The following emoji are marked as animated\n"
+                    for emoji in self.animated_emoji_dict[self.message.server]:
+                        print(emoji)
+                        result += "{}\n".format(emoji)
+                    await self.client.send_message(self.message.channel,result)
+            else:
+                pass
+# pylint: enable=too-few-public-methods
