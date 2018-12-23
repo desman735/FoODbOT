@@ -82,8 +82,8 @@ class EmojiCounter(ActionInterface):
                     if reaction.custom_emoji:
                         if reaction.emoji in container.keys():
                             container[reaction.emoji] += reaction.count
-                        else:
-                            container[reaction.emoji] = reaction.count
+#                        else:
+#                            container[reaction.emoji] = reaction.count
 
     async def run_action(self):
         '''Should be called once per bot request'''
@@ -122,11 +122,11 @@ class EmojiCounter(ActionInterface):
         if self.channels[0].server.name not in self.animated_emoji_dict.keys():
             self.animated_emoji_dict[self.channels[0].server.name]=[]
         for emoji, amount in emojis:
-            print("{} & {} & {} & {}".format(
-                str(emoji),
-                str(emoji).split(":")[1],
-                self.channels[0].server.name,
-                self.animated_emoji_dict[self.channels[0].server.name]))
+#             print("{} & {} & {} & {}".format(
+#                 str(emoji),
+#                 str(emoji).split(":")[1],
+#                 self.channels[0].server.name,
+#                 self.animated_emoji_dict[self.channels[0].server.name]))
 
             if emoji.name not in str(self.animated_emoji_dict[self.channels[0].server.name]):
                 line = "Emoji {} was used {} times.\n".format(emoji, amount)
