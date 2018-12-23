@@ -73,8 +73,8 @@ class EmojiCounter(ActionInterface):
                 if emoji:
                     if emoji in container.keys():
                         container[emoji] += 1
-                    else:
-                        container[emoji] = 1
+#                    else:
+#                        container[emoji] = 1
                     # add to the container
 
             if message.reactions:
