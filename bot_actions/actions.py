@@ -73,17 +73,12 @@ class EmojiCounter(ActionInterface):
                 if emoji:
                     if emoji in container.keys():
                         container[emoji] += 1
-#                    else:
-#                        container[emoji] = 1
-                    # add to the container
 
             if message.reactions:
                 for reaction in message.reactions:
                     if reaction.custom_emoji:
                         if reaction.emoji in container.keys():
                             container[reaction.emoji] += reaction.count
-#                        else:
-#                            container[reaction.emoji] = reaction.count
 
     async def run_action(self):
         '''Should be called once per bot request'''
