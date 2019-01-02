@@ -19,7 +19,7 @@ async def handle_messages(client, channel, check_time, handler, container):
             start = msg
             start_time = msg.timestamp
             if start_time > stop_time:  # todo: should it be checked?
-                handler(msg, container,client.user.id)  # container =
+                handler(msg, container, client.user.id)  # container =
             else:
                 break  # found message after stop_time
 
