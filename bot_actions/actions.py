@@ -129,7 +129,6 @@ class EmojiCounter(ActionInterface):
 
                 # Send message, if line will be too long after concat
                 if len(output) + len(line) > self.characters_limit:
-                    output += "Whew..."
                     await self.client.send_message(self.response_channel,
                                                    output)
                     output = ""
