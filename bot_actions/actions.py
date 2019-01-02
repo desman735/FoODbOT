@@ -85,7 +85,7 @@ class EmojiCounter(ActionInterface):
             print('No client or responce channel to answer')
             return
 
-        result = 'Counting emojis, do not disturb...'
+        result = 'Counting emojis for last {} days, do not disturb...'.format(self.days_to_count)
         print(result)
         result_msg = await self.client.send_message(self.response_channel,
                                                     result)
