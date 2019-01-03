@@ -1,5 +1,6 @@
 '''File for functions, that implements bot functions'''
 
+from datetime import datetime
 from discord import Server
 from . import actions
 
@@ -16,7 +17,7 @@ class MessageHandler:
 
     def parse_message(self, message, settings) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
-        print('Message:', message.content)
+        print('Message ({}): {}'.format(datetime.utcnow(), message.content))
         if not message.content.startswith(self.command_character):
             # The branch that gets called
             # when there is no command character at the start of a message.

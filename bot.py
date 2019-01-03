@@ -1,4 +1,5 @@
 """Script to start the FoODbOT"""
+from datetime import datetime
 from discord import Client
 from settings_parser import SettingsParser
 from bot_actions import MessageHandler
@@ -14,7 +15,7 @@ HANDLER = MessageHandler(SETTINGS.command_character)
 @CLIENT.event
 async def on_ready():
     '''Runs on the bot start'''
-    print('FoODbOT started as a', CLIENT.user.name)
+    print('FoODbOT started as a', CLIENT.user.name, 'at', datetime.utcnow())
     print('Bot ID is', CLIENT.user.id)
     print('------')
 
