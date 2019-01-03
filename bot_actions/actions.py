@@ -85,7 +85,8 @@ class EmojiCounter(ActionInterface):
             print('No client or responce channel to answer')
             return
 
-        result = 'Counting emojis for last {} days, do not disturb...'.format(self.days_to_count)
+        result = 'Counting emojis for the last {} day(s), do not disturb...'\
+                 .format(self.days_to_count)
         print(result)
         result_msg = await self.client.send_message(self.response_channel,
                                                     result)
@@ -104,7 +105,8 @@ class EmojiCounter(ActionInterface):
             except errors.Forbidden:
                 print("We have no access to {}".format(channel))
         print('Finished!')
-        output = "We found the following emojis:\n"
+        output = "We found the following emojis in the last {} day(s):\n"\
+                 .format(self.days_to_count)
         await self.client.edit_message(result_msg, output)
 
         output = ""
