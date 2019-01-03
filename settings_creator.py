@@ -49,8 +49,5 @@ def load_new_settings_files():
     with open('mutableSettings.ini', 'w') as configfile:
         mutable_config.write(configfile)
 
-    if 'animated_emoji_list' not in mutable_config:
-        mutable_config['animated_emoji_list'] = dict()
-
 if __name__ == '__main__':
     load_new_settings_files()
