@@ -155,11 +155,11 @@ class AnimatedEmojiLister(ActionInterface):
 
     async def run_action(self):
         '''Method to run async action'''
-        if self.message.server not in self.animated_emoji_dict.keys():
-            self.animated_emoji_dict[self.message.server] = []
+        if self.message.server.name not in self.animated_emoji_dict.keys():
+            self.animated_emoji_dict[self.message.server.name] = []
 
         message_words = self.message.content.split(" ")
-        animated_emojis = self.animated_emoji_dict[self.message.server]
+        animated_emojis = self.animated_emoji_dict[self.message.server.name]
 
         if len(message_words) >= 2:
             print(self.message.content+"\n" + message_words[1])
@@ -187,5 +187,5 @@ class AnimatedEmojiLister(ActionInterface):
                     await self.client.send_message(self.message.channel,
                                                    result)
             else:
-                pass
+                print("Animated emojis: No command given")
 # pylint: enable=too-few-public-methods
