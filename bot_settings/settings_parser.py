@@ -9,7 +9,7 @@ The other source contains stuff that benefits from being separate
 (for example the bot token etc.)
 '''
 import configparser
-import settings_creator
+from . import settings_creator
 
 
 # pylint: disable=too-few-public-methods
