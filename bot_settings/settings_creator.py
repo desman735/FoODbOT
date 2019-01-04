@@ -39,7 +39,7 @@ def load_new_settings_files():
         mutable_config['Default'] = {'BotToken': ''}
 
     mutable_config.optionxform = str
-    if 'animated_emoji' in mutable_config:
+    if 'animated-emoji' in mutable_config:
         pass
     else:
         mutable_config['animated-emoji'] = {"Stand Still Stay Silent":
