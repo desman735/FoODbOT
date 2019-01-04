@@ -4,6 +4,7 @@ import re
 
 from discord import ChannelType
 from discord import errors
+from bot_settings import update_animated_emoji_list
 from . import functions
 
 
@@ -167,15 +168,15 @@ class AnimatedEmojiLister(ActionInterface):
                 for emoji in message_words[2:]:
                     if emoji not in animated_emojis:
                         animated_emojis.append(emoji)
-                await self.client.send_message(self.message.channel,
-                                               "Added to the list")
+                update_animated_emoji_list(self.message.server.name, animated_emojis)
+                await self.client.send_message(self.message.channel, "Added to the list")
 
             elif message_words[1] == "remove":
                 for emoji in message_words[2:]:
                     if emoji in animated_emojis:
                         animated_emojis.remove(emoji)
-                await self.client.send_message(self.message.channel,
-                                               "Removed from the list")
+                update_animated_emoji_list(self.message.server.name, animated_emojis)
+                await self.client.send_message(self.message.channel, "Removed from the list")
 
             elif message_words[1] == "print":
                 print("Hi")
