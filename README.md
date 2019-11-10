@@ -2,4 +2,4 @@
 
 Dependencies:
 * python 3.6.7
-* discord.py-0.16.12
+* discord.py-1.2.4

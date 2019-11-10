@@ -9,7 +9,8 @@ The other source contains stuff that benefits from being separate
 (for example the bot token etc.)
 '''
 import configparser
-import settings_creator
+import json
+from . import settings_creator
 
 
 # pylint: disable=too-few-public-methods
@@ -45,7 +46,12 @@ class SettingsParser:
         mutable_config.read('mutableSettings.ini')
         self.bot_token = mutable_config['Default']['bottoken']
         self.animated_emoji_dict = dict()
-        for k in mutable_config['animated-emoji']:
-            self.animated_emoji_dict[k] = mutable_config['animated-emoji'][k]
+        for server in mutable_config['animated-emoji']:
+            # read array of animated emojis (configparser read it like a string)
+            emojis_array_string = mutable_config['animated-emoji'][server]
+            # replace ' to " to create a valid json array
+            emojis_array_string = emojis_array_string.replace("'", '"')
+            emojis_array = json.loads(emojis_array_string) # parse the emojis array
+            self.animated_emoji_dict[server] = emojis_array
 
 # pylint: enable=too-few-public-methods
