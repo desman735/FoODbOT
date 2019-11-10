@@ -4,6 +4,7 @@ import re
 
 from discord import ChannelType
 from discord import errors
+from discord import Embed
 from bot_settings import update_animated_emoji_list
 from . import functions
 
@@ -189,4 +190,25 @@ class AnimatedEmojiLister(ActionInterface):
                                                    result)
             else:
                 print("Animated emojis: No command given")
+# pylint: enable=too-few-public-methods
+
+# pylint: disable=too-few-public-methods
+class HelpMessage(ActionInterface):
+    """Creates and prints the help message"""
+    def __init__(self, message, client, command_character, admins,days_to_count):
+        super().__init__()
+        self.message = message
+        self.client = client
+        self.command_character = command_character
+        self.admins = admins
+        self.days_to_count = days_to_count
+    
+    async def run_action(self):
+        embed = Embed(title = "Help with FooDBoT commands",
+                      description = f"{self.client.user.name} commands accessible to {self.message.author.display_name}")
+        embed.add_field(name=f"{self.command_character}help", value = "Displays this help message.")
+        if str(self.message.author) in self.admins or self.message.author.guild_permissions.administrator:
+            embed.add_field(name=f"{self.command_character}countEmoji",
+                            value = f"Counts the server emoji used in the last {self.days_to_count} days.")
+        await self.message.channel.send(content=None,embed=embed)
 # pylint: enable=too-few-public-methods

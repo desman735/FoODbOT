@@ -1,7 +1,7 @@
 '''File for functions, that implements bot functions'''
 
 from datetime import datetime
-from discord import Server
+import discord
 from . import actions
 
 
@@ -15,9 +15,10 @@ class MessageHandler:
         '''
         self.command_character = command_character
 
-    def parse_message(self, message, settings) -> actions.ActionInterface:
+    def parse_message(self, message, settings,client) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
-        print('Message ({}): {}'.format(datetime.utcnow(), message.content))
+        if message.content:
+            print(f'({datetime.utcnow()}) Author: {message.author.display_name}, Message: {message.content}')
         if not message.content.startswith(self.command_character):
             # The branch that gets called
             # when there is no command character at the start of a message.
@@ -31,31 +32,25 @@ class MessageHandler:
 
             # todo: return different actions in different cases
             # todo: parse for amount of days. Some other time structure?
-            action_dict = {
-                "countEmoji": actions.EmojiCounter(message.server.channels, settings.days_to_count,
-                                                   settings.animated_emoji_dict),
-                "animatedEmojis": actions.AnimatedEmojiLister(message, settings.animated_emoji_dict)
+            admin_action_dict = {
+                "countEmoji": actions.EmojiCounter(message.channel.guild.channels, settings.days_to_count,
+                                                   settings.animated_emoji_dict)#,
+#                 "animatedEmojis": actions.AnimatedEmojiLister(message, settings.animated_emoji_dict)
             }
+            
+            general_action_dict = {"help": actions.HelpMessage(message, client, self.command_character,
+                                                               settings.admins, settings.days_to_count)}
 
-            if message.content[1:].split(" ")[0] in action_dict.keys():
-                return action_dict[message.content[1:].split(" ")[0]]
+            if message.content.split(self.command_character)[1].split(" ")[0] in general_action_dict:
+                print(message.content.split(self.command_character)[1].split(" ")[0])
+                return general_action_dict[message.content.split(self.command_character)[1].split(" ")[0]]
+                    
+            elif message.content.split(self.command_character)[1].split(" ")[0] in admin_action_dict.keys():
+                return admin_action_dict[message.content.split(self.command_character)[1].split(" ")[0]]
 #             if message.content[1:].startswith("countEmoji"):
 #                 return actions.EmojiCounter(message.server.channels,
 #                                             settings.days_to_count)
 
         return actions.ActionInterface()  # todo: or None?
-
-    # def message_emoji_tester(self, message):
-    #     """
-    #     Looks for custom emoji, and prints some info about it
-    #     to the command line
-    #     """
-    #     message_emoji_pattern = re.compile("(<:?[a-zA-Z]+:?[0-9]+>)")
-    #     result = message_emoji_pattern.findall(message.content)
-    #     if result:
-    #         for res in result:
-    #             print("emoji found: {}, sent in server: {}, in channel: {}, \
-    #                 by: {}".format(res, message.server,
-    #                                message.channel, message.author))
 
 # pylint: enable=too-few-public-methods

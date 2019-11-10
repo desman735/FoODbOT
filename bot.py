@@ -28,36 +28,34 @@ async def on_message(message):
         print('Error! No message handler found!')
         return
 
-    if str(message.author) in SETTINGS.admins or \
-            message.author.server_permissions.administrator:
-        action = HANDLER.parse_message(message, SETTINGS)
-        action.client = CLIENT
-        action.response_channel = message.channel
-        action.characters_limit = SETTINGS.characters_limit
-        await action.run_action()
-
-
-@CLIENT.event
-async def on_reaction_add(reaction, user):
-    '''Runs on adding a reaction to any message'''
-    if reaction.custom_emoji:
-        print("name: {}, id: {}, user: {}, server: {}, channel: {}, \
-        adding: True".format(reaction.emoji.name, reaction.emoji.id,
-                             user, reaction.message.server,
-                             reaction.message.channel))
-    else:
-        print("emoji: {}".format(reaction.emoji))
-
-
-@CLIENT.event
-async def on_reaction_remove(reaction, user):
-    '''Runs on removing a reaction from any message'''
-    if reaction.custom_emoji:
-        print("name: {}, id: {}, user: {}, server: {}, channel: {}, \
-        adding: False".format(reaction.emoji.name, reaction.emoji.id,
-                              user, reaction.message.server,
-                              reaction.message.channel))
-    else:
-        print("emoji: {}".format(reaction.emoji))
-
+#     if str(message.author) in SETTINGS.admins or \
+#             message.author.guild_permissions.administrator:
+#         await message.channel.send("Hi")
+    action = HANDLER.parse_message(message, SETTINGS, CLIENT)
+    await action.run_action()
+#
+#
+# @CLIENT.event
+# async def on_reaction_add(reaction, user):
+#     '''Runs on adding a reaction to any message'''
+#     if reaction.custom_emoji:
+#         print("name: {}, id: {}, user: {}, server: {}, channel: {}, \
+#         adding: True".format(reaction.emoji.name, reaction.emoji.id,
+#                              user, reaction.message.server,
+#                              reaction.message.channel))
+#     else:
+#         print("emoji: {}".format(reaction.emoji))
+#
+#
+# @CLIENT.event
+# async def on_reaction_remove(reaction, user):
+#     '''Runs on removing a reaction from any message'''
+#     if reaction.custom_emoji:
+#         print("name: {}, id: {}, user: {}, server: {}, channel: {}, \
+#         adding: False".format(reaction.emoji.name, reaction.emoji.id,
+#                               user, reaction.message.server,
+#                               reaction.message.channel))
+#     else:
+#         print("emoji: {}".format(reaction.emoji))
+#
 CLIENT.run(SETTINGS.bot_token)
