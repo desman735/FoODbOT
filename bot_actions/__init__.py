@@ -46,7 +46,8 @@ class MessageHandler:
                 return general_action_dict[message.content.split(self.command_character)[1].split(" ")[0]]
                     
             elif message.content.split(self.command_character)[1].split(" ")[0] in admin_action_dict.keys():
-                return admin_action_dict[message.content.split(self.command_character)[1].split(" ")[0]]
+                if str(message.author) in settings.admins or message.author.guild_permissions.administrator:
+                    return admin_action_dict[message.content.split(self.command_character)[1].split(" ")[0]]
 #             if message.content[1:].startswith("countEmoji"):
 #                 return actions.EmojiCounter(message.server.channels,
 #                                             settings.days_to_count)
