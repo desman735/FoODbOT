@@ -33,7 +33,7 @@ class MessageHandler:
             # todo: return different actions in different cases
             # todo: parse for amount of days. Some other time structure?
             admin_action_dict = {
-                "countEmoji": actions.EmojiCounter(message.channel.guild.channels, settings.days_to_count,
+                "countEmoji": actions.EmojiCounter(message.guild.channels, settings.days_to_count,
                                                    settings.animated_emoji_dict)#,
 #                 "animatedEmojis": actions.AnimatedEmojiLister(message, settings.animated_emoji_dict)
             }
