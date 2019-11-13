@@ -17,7 +17,7 @@ class MessageHandler:
 
     def parse_message(self, message, settings,client) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
-        if message.content and not message.author == client.user.name:
+        if message.content and message.author != client.user.name:
             print(f'({datetime.utcnow()}) Author: {message.author.display_name}, Message: {message.content}')
         if not message.content.startswith(self.command_character):
             # The branch that gets called
