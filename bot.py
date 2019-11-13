@@ -32,6 +32,9 @@ async def on_message(message):
 #             message.author.guild_permissions.administrator:
 #         await message.channel.send("Hi")
     action = HANDLER.parse_message(message, SETTINGS, CLIENT)
+    action.client = CLIENT
+    action.response_channel = message.channel
+    action.characters_limit = SETTINGS.characters_limit
     await action.run_action()
 #
 #
