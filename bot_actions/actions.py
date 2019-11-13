@@ -27,11 +27,11 @@ class ActionInterface:
 class EmojiCounter(ActionInterface):
     '''Class, that counts emoji usage for a some period of time'''
 
-    def __init__(self, channels, days_to_count, animated_emoji_dict):
+    def __init__(self, channels, days_to_count, response_channel):
         super().__init__()
         self.channels = []  # Should be Discord.py channels
         self.days_to_count = None
-        self.animated_emoji_dict = animated_emoji_dict
+        self.response_channel = response_channel
 
         for channel in channels:
             if channel.type == ChannelType.text:  # filter channels by type
@@ -44,36 +44,31 @@ class EmojiCounter(ActionInterface):
         '''returns the dictionary <emoji: 0> with all emojis from the server'''
         result = dict()
         for emoji in server.emojis:
-            result[emoji] = 0
+            if not emoji.animated:
+                result[emoji] = 0
 
         return result
 
     @staticmethod
     def count_emoji_in_messages(message, container, bot_id):
-        '''Called once per message in the range'''
-        # print("Message text: \"{}\", \
-        #       timestamp: \"{}\"".format(message.content, message.timestamp))
+        '''Counts the number of static server emoji in the text of the message and in the reactions.
+           Ignores messages sent by the bot.
+        '''
+
         if not message.author.id == bot_id:
             message_emoji_pattern = re.compile("(<:?[a-zA-Z0-9]+:?[0-9]+>)")
             emojis_str = message_emoji_pattern.findall(message.content)
-
+            print(message.content)
             for emoji_str in emojis_str:
                 # split -> ['<', 'name', 'id>']
                 emoji_id = emoji_str.split(':')[2][:-1]
 
-                # Try to find emoji in server emojis by id
-                # Get array of all emojis with parsed id and get first element
-                # None (default value) in case nothing is found
-                emoji = next((e for e in
-                              message.server.emojis if e.id == emoji_id),
-                             None)
+                search_container = dict()
+                for k in container.keys():
+                    search_container[k.id] = k
 
-                # todo: maybe, it's better to:
-                # 1) cache all server emoji on action start
-                # 2) use something like if emoji_str in str(server.emojis)
-
-                if emoji and emoji in container.keys():
-                    container[emoji] += 1
+                if int(emoji_id) in search_container.keys():
+                    container[search_container[int(emoji_id)]] += 1
 
             if message.reactions:
                 for reaction in message.reactions:
@@ -83,33 +78,30 @@ class EmojiCounter(ActionInterface):
 
     async def run_action(self):
         '''Should be called once per bot request'''
-        if not self.response_channel or not self.client:
-            print('No client or responce channel to answer')
+        if not self.response_channel:# or not self.client:
+            print('No responce channel to answer')
             return
 
-        result = 'Counting emojis for the last {} day(s), do not disturb...'\
-                 .format(self.days_to_count)
+        result = f'Counting emojis for the last {self.days_to_count} day(s), do not disturb...'
         print(result)
-        result_msg = await self.client.send_message(self.response_channel,
-                                                    result)
+        result_msg = await self.response_channel.send(result)
 
         check_time = timedelta(days=self.days_to_count)
 
-        emoji_dict = self.get_server_emoji_dict(self.response_channel.server)
-
-        for channel in self.channels:
-            print('Working with', channel)
-            try:
-                await functions.handle_messages(self.client, channel,
-                                                check_time,
-                                                self.count_emoji_in_messages,
-                                                emoji_dict)
-            except errors.Forbidden:
-                print("We have no access to {}".format(channel))
-        print('Finished!')
-        output = "We found the following emojis in the last {} day(s):\n"\
-                 .format(self.days_to_count)
-        await self.client.edit_message(result_msg, output)
+        emoji_dict = self.get_server_emoji_dict(self.response_channel.guild)
+        async with self.response_channel.typing():
+            for channel in self.channels:
+                print('Working with', channel)
+                try:
+                    await functions.handle_messages(self.client, channel,
+                                                    check_time,
+                                                    self.count_emoji_in_messages,
+                                                    emoji_dict)
+                except errors.Forbidden:
+                    print(f"We have no access to {channel}")
+            print('Finished!')
+            output = f"We found the following emojis in the last {self.days_to_count} day(s):\n"
+            await result_msg.edit(content = output)
 
         output = ""
         # To change the sorting order, add reverse=True to the sorted()
@@ -118,32 +110,20 @@ class EmojiCounter(ActionInterface):
         # sort by amount, in increasing order
         emojis.sort(key=lambda emoji_tuple: emoji_tuple[1], reverse=False)
 
-        server_name = self.channels[0].server.name
-        if server_name not in self.animated_emoji_dict.keys():
-            self.animated_emoji_dict[server_name] = []
         for emoji, amount in emojis:
-            # print("{} & {} & {} & {}".format(
-            #     str(emoji),
-            #     str(emoji).split(":")[1],
-            #     self.channels[0].server.name,
-            #     self.animated_emoji_dict[self.channels[0].server.name]))
+            line = f"Emoji {emoji} was used {amount} times.\n"
 
-            if emoji.name not in str(self.animated_emoji_dict[server_name]):
-                line = "Emoji {} was used {} times.\n".format(emoji, amount)
+            # Send message, if line will be too long after concat
+            if len(output) + len(line) > self.characters_limit:
+                await self.response_channel.send(output)
+                output = ""
 
-                # Send message, if line will be too long after concat
-                if len(output) + len(line) > self.characters_limit:
-                    await self.client.send_message(self.response_channel,
-                                                   output)
-                    output = ""
-
-                output += line
+            output += line
 
         # Send what's left after cycle
         if output:
             output += 'The end!'
-            await self.client.send_message(self.response_channel,
-                                           output)
+            await self.response_channel.send(output)
 
 
 # pylint: disable=too-few-public-methods
@@ -195,14 +175,13 @@ class AnimatedEmojiLister(ActionInterface):
 # pylint: disable=too-few-public-methods
 class HelpMessage(ActionInterface):
     """Creates and prints the help message"""
-    def __init__(self, message, client, command_character, admins,days_to_count):
+    def __init__(self, message, command_character, admins,days_to_count):
         super().__init__()
         self.message = message
-        self.client = client
         self.command_character = command_character
         self.admins = admins
         self.days_to_count = days_to_count
-    
+
     async def run_action(self):
         embed = Embed(title = "Help with FooDBoT commands",
                       description = f"{self.client.user.name} commands accessible to {self.message.author.display_name}")
