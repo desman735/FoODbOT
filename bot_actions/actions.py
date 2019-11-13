@@ -58,7 +58,6 @@ class EmojiCounter(ActionInterface):
         if not message.author.id == bot_id:
             message_emoji_pattern = re.compile("(<:?[a-zA-Z0-9]+:?[0-9]+>)")
             emojis_str = message_emoji_pattern.findall(message.content)
-            print(message.content)
             for emoji_str in emojis_str:
                 # split -> ['<', 'name', 'id>']
                 emoji_id = emoji_str.split(':')[2][:-1]
