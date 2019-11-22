@@ -106,6 +106,7 @@ Foodbotvenv/
 
 # VS Code files
 .vscode
+*.code-workspace
 
 #eclipse project files
 .project
