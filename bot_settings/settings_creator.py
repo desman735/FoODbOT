@@ -9,46 +9,51 @@ can be used to update the setup
 import configparser
 
 
-def load_new_settings_files():
+def update_settings_files():
     """A script to set up both settings files"""
     config = configparser.ConfigParser()
     config.read('settings.ini')
-    if 'Default' in config:
-        if 'commandcharacter' not in config['Default']:
-            config['Default']['CommandCharacter'] = '!'
-        if 'admins' not in config['Default']:
-            config['Default']['Admins'] = ['Desman735#0679', 'KaTaai#9096']
-        if 'days_to_count' not in config['Default']:
-            config['Default']['days_to_count'] = '7'
-        if 'characters_limit' not in config['Default']:
-            config['Default']['characters_limit'] = '2000'
+    
+    if 'System' in config:
+        system = config['System']
+        if 'command_character' not in system:
+            system['command_character'] = '!'
+        if 'admins' not in system:
+            system['admins'] = ['Desman735#0679', 'KaTaai#9096']
     else:
-        config['Default'] = {'CommandCharacter': '!',
-                             'Admins': ['Desman735#0679', 'KaTaai#9096'],
-                             'days_to_count': '7',
-                             'characters_limit': '2000'}
+        config['System'] = {'command_character': '!',
+                            'admins': ['Desman735#0679', 'KaTaai#9096']}
+    
+    if 'General' in config:
+        if 'characters_limit' not in config['General']:
+            config['General']['characters_limit'] = 2000
+    else:
+        config['General'] = {'characters_limit': 2000}
+
+    if 'CountEmoji' in config:
+        if 'days_to_count' not in config['CountEmoji']:
+            config['CountEmoji']['days_to_count'] = 7
+    else:
+        config['CountEmoji'] = {'days_to_count': 7}
 
     with open('settings.ini', 'w') as configfile:
         config.write(configfile)
 
     mutable_config = configparser.ConfigParser()
-    mutable_config.optionxform = str
+    # changing default key transformer to keep the case of keys on file update
+    # default key transformer changes key values to lowercase
+    # removed due to new settings naming convention
+    # mutable_config.optionxform = str
     mutable_config.read('mutableSettings.ini')
-    if 'Default' in mutable_config:
-        if 'bottoken' not in mutable_config['Default']:
-            mutable_config['Default']['BotToken'] = ''
-    else:
-        mutable_config['Default'] = {'BotToken': ''}
 
-    if 'animated-emoji' in mutable_config:
-        pass
+    if 'System' in mutable_config:
+        if 'bot_token' not in mutable_config['System']:
+            mutable_config['Default']['bot_token'] = ''
     else:
-        mutable_config['animated-emoji'] = {"Stand Still Stay Silent":
-                                            [":tuuriahhumm:", ":sooffended:"],
-                                            "SSSSDev": [':465993384570650634:']
-                                            }
+        mutable_config['System'] = {'bot_token': ''}
+
     with open('mutableSettings.ini', 'w') as configfile:
         mutable_config.write(configfile)
 
 if __name__ == '__main__':
-    load_new_settings_files()
+    update_settings_files()

@@ -9,6 +9,7 @@ The other source contains stuff that benefits from being separate
 (for example the bot token etc.)
 '''
 import configparser
+import json
 from collections import namedtuple
 from . import settings_creator
 
@@ -26,9 +27,9 @@ class SettingsParser:
         try:
             self.get_settings()
         except KeyError:
-            print("An error occurred while loading the animated_emoji_dict\n"+
-                  "Updating animated_emoji_dict file")
-            settings_creator.load_new_settings_files()
+            print("An error occurred while loading the bot settings\n"+
+                  "Updating settings file")
+            settings_creator.update_settings_files()
             self.get_settings()
 
     def get_settings(self):
@@ -38,8 +39,10 @@ class SettingsParser:
         config.read('settings.ini')
 
         # system settings
-        # todo: parse admins
         admins = config['System']['admins']
+        # configparser saves strings with ' at creation, but json requires ", so we replacing them
+        admins = admins.replace("'", '"')
+        admins = json.loads(admins)
         command_character = config['System']['command_character']
 
         # general settings
@@ -55,12 +58,14 @@ class SettingsParser:
 
 
         mutable_config = configparser.ConfigParser()
-        # todo: check, what is this for and update a comment
-        mutable_config.optionxform = str
+        # changing default key transformer to keep the case of keys on file read
+        # default key transformer changes key values to lowercase
+        # removed due to new settings naming convention
+        # mutable_config.optionxform = str
         mutable_config.read('mutableSettings.ini')
 
         # system settings
-        token = mutable_config['System']['bottoken']
+        token = mutable_config['System']['bot_token']
 
         # action settings
         for section in mutable_config:
@@ -68,7 +73,7 @@ class SettingsParser:
                 if section in self.action_settings:
                     self.action_settings[section].update(mutable_config[section])
                 else:
-                    self.action_settings[section] = config[section]
+                    self.action_settings[section] = dict(mutable_config[section])
 
         # init settings structures
         self.system_settings = SystemSettings(token, command_character, admins)
