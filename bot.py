@@ -7,7 +7,7 @@ from bot_actions import MessageHandler
 
 SETTINGS = settings_parser.SettingsParser()
 CLIENT = Client()
-HANDLER = MessageHandler(SETTINGS.command_character)
+HANDLER = MessageHandler(SETTINGS.system_settings)
 
 # todo: check emoji group before counting
 # todo: admins by roles
@@ -16,8 +16,8 @@ HANDLER = MessageHandler(SETTINGS.command_character)
 @CLIENT.event
 async def on_ready():
     '''Runs on the bot start'''
-    print('FoODbOT started as a', CLIENT.user.name, 'at', datetime.utcnow())
-    print('Bot ID is', CLIENT.user.id)
+    print(f'FoODbOT started as a {CLIENT.user.name}, at {datetime.utcnow()}')
+    print(f'Bot ID is {CLIENT.user.id}')
     print('------')
 
 
@@ -31,10 +31,13 @@ async def on_message(message):
 #     if str(message.author) in SETTINGS.admins or \
 #             message.author.guild_permissions.administrator:
 #         await message.channel.send("Hi")
-    action = HANDLER.parse_message(message, SETTINGS, CLIENT)
+    action = HANDLER.parse_message(message, SETTINGS)
+    if not action:
+        return
+
     action.client = CLIENT
     action.response_channel = message.channel
-    action.characters_limit = SETTINGS.characters_limit
+    action.characters_limit = SETTINGS.general_settings.characters_limit
     await action.run_action()
 #
 #
@@ -61,4 +64,4 @@ async def on_message(message):
 #     else:
 #         print("emoji: {}".format(reaction.emoji))
 #
-CLIENT.run(SETTINGS.bot_token)
+CLIENT.run(SETTINGS.system_settings.token)

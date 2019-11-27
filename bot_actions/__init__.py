@@ -9,22 +9,27 @@ from . import actions
 class MessageHandler:
     '''Class to handle commands to the bot'''
 
-    def __init__(self, command_character):
-        '''
-        command_character is a string
-        '''
-        self.command_character = command_character
+    def __init__(self, system_settings):
+        self.command_character = system_settings.command_character
+        self.admins = system_settings.admins
 
-    def parse_message(self, message, settings,client) -> actions.ActionInterface:
+    def parse_message(self, message, settings) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
-        if message.content and (str(message.author) in settings.admins or message.author.guild_permissions.administrator):
-            print(f'({datetime.utcnow()}) Author: {message.author.display_name}, Message: {message.content}')
+        if not message.content:
+            return None
+
+        author = message.author
+        if str(author) in self.admins or author.guild_permissions.administrator:
+            print(f'({datetime.utcnow()})',
+                  f'Author: {message.author.display_name},',
+                  f'Message: {message.content}')
+
         if not message.content.startswith(self.command_character):
             # The branch that gets called
             # when there is no command character at the start of a message.
             # Use for tasks that have to check every message.
             # self.messageEmojiTester(message)
-            pass
+            return None
 
         if message.content.startswith(self.command_character):
             # The branch that gets called
@@ -32,22 +37,26 @@ class MessageHandler:
 
             # todo: return different actions in different cases
             # todo: parse for amount of days. Some other time structure?
-            command_name = message.content.split(self.command_character,1)[1].split(" ")[0]
+            days_to_count = int(settings.action_settings['CountEmoji']['days_to_count'])
+            command_name = message.content.split(self.command_character, 1)[1].split(" ")[0]
             admin_action_dict = {
-                "countEmoji": actions.EmojiCounter(message.guild.channels, settings.days_to_count, message.channel)
-#                 "animatedEmojis": actions.AnimatedEmojiLister(message, settings.animated_emoji_dict)
+                "countEmoji":
+                    actions.EmojiCounter(message.guild.channels, days_to_count, message.channel),
+                # "animatedEmojis":
+                #     actions.AnimatedEmojiLister(message, settings.animated_emoji_dict)
             }
 
-            general_action_dict = {"help": actions.HelpMessage(message, self.command_character,
-                                                               settings.admins, settings.days_to_count)}
+            general_action_dict = {
+                "help": actions.HelpMessage(message, self.command_character,
+                                            self.admins, days_to_count)}
 
-            if command_name in general_action_dict:
+            if command_name in general_action_dict.keys():
                 return general_action_dict[command_name]
 
-            elif command_name in admin_action_dict.keys():
-                if str(message.author) in settings.admins or message.author.guild_permissions.administrator:
+            if command_name in admin_action_dict.keys():
+                if str(author) in self.admins or author.guild_permissions.administrator:
                     return admin_action_dict[command_name]
 
-        return actions.ActionInterface()
+        return None
 
 # pylint: enable=too-few-public-methods
