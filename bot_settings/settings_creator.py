@@ -11,9 +11,18 @@ import configparser
 
 def update_settings_files():
     """A script to set up both settings files"""
+    update_config('settings.ini')
+    update_mutable_config('mutableSettings.ini')
+
+
+def update_config(config_file_path: str):
+    """
+    A script to update fields of the general config file.
+    These settings can be safely shared between a few instances of the bot
+    """
     config = configparser.ConfigParser()
-    config.read('settings.ini')
-    
+    config.read(config_file_path)
+
     if 'System' in config:
         system = config['System']
         if 'command_character' not in system:
@@ -23,7 +32,7 @@ def update_settings_files():
     else:
         config['System'] = {'command_character': '!',
                             'admins': ['Desman735#0679', 'KaTaai#9096']}
-    
+
     if 'General' in config:
         if 'characters_limit' not in config['General']:
             config['General']['characters_limit'] = 2000
@@ -36,24 +45,31 @@ def update_settings_files():
     else:
         config['CountEmoji'] = {'days_to_count': 7}
 
-    with open('settings.ini', 'w') as configfile:
+    with open(config_file_path, 'w') as configfile:
         config.write(configfile)
 
-    mutable_config = configparser.ConfigParser()
+def update_mutable_config(config_file_path: str):
+    """
+    A script to update fields of the mutable config file.
+    These settings are unique for each instance of the bot and not tracked by git
+    """
+    config = configparser.ConfigParser()
+
     # changing default key transformer to keep the case of keys on file update
     # default key transformer changes key values to lowercase
     # removed due to new settings naming convention
     # mutable_config.optionxform = str
-    mutable_config.read('mutableSettings.ini')
 
-    if 'System' in mutable_config:
-        if 'bot_token' not in mutable_config['System']:
-            mutable_config['Default']['bot_token'] = ''
+    config.read(config_file_path)
+
+    if 'System' in config:
+        if 'bot_token' not in config['System']:
+            config['Default']['bot_token'] = ''
     else:
-        mutable_config['System'] = {'bot_token': ''}
+        config['System'] = {'bot_token': ''}
 
-    with open('mutableSettings.ini', 'w') as configfile:
-        mutable_config.write(configfile)
+    with open(config, 'w') as configfile:
+        config.write(configfile)
 
 if __name__ == '__main__':
     update_settings_files()

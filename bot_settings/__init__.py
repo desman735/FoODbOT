@@ -14,4 +14,4 @@ def update_animated_emoji_list(server_name, emoji_list):
 
 
 if __name__ == '__main__':
-    settings_creator.load_new_settings_files()
+    settings_creator.update_settings_files()
