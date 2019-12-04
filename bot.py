@@ -1,11 +1,11 @@
 """Script to start the FoODbOT"""
 from datetime import datetime
 from discord import Client
-from bot_settings import settings_parser
+from bot_settings import settings
 from bot_actions import MessageHandler
 
 
-SETTINGS = settings_parser.SettingsParser()
+SETTINGS = settings.BotSettings('settings.ini', 'mutableSettings.ini')
 CLIENT = Client()
 HANDLER = MessageHandler(SETTINGS.system_settings)
 
