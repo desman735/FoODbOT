@@ -20,7 +20,6 @@ class ActionInterface:
 
     async def run_action(self):
         '''Method to run async action'''
-        pass
 # pylint: enable=too-few-public-methods
 
 
@@ -100,7 +99,7 @@ class EmojiCounter(ActionInterface):
                     print(f"We have no access to {channel}")
             print('Finished!')
             output = f"We found the following emojis in the last {self.days_to_count} day(s):\n"
-            await result_msg.edit(content = output)
+            await result_msg.edit(content=output)
 
         output = ""
         # To change the sorting order, add reverse=True to the sorted()
@@ -174,7 +173,7 @@ class AnimatedEmojiLister(ActionInterface):
 # pylint: disable=too-few-public-methods
 class HelpMessage(ActionInterface):
     """Creates and prints the help message"""
-    def __init__(self, message, command_character, admins,days_to_count):
+    def __init__(self, message, command_character, admins, days_to_count):
         super().__init__()
         self.message = message
         self.command_character = command_character
@@ -182,11 +181,22 @@ class HelpMessage(ActionInterface):
         self.days_to_count = days_to_count
 
     async def run_action(self):
-        embed = Embed(title = "Help with FooDBoT commands",
-                      description = f"{self.client.user.name} commands accessible to {self.message.author.display_name}")
-        embed.add_field(name=f"{self.command_character}help", value = "Displays this help message.")
+        embed = Embed(title="Help with FooDBoT commands",
+                      description=f"{self.client.user.name} commands accessible to {self.message.author.display_name}")
+        embed.add_field(name=f"{self.command_character}help", value="Displays this help message.")
         if str(self.message.author) in self.admins or self.message.author.guild_permissions.administrator:
             embed.add_field(name=f"{self.command_character}countEmoji",
-                            value = f"Counts the server emoji used in the last {self.days_to_count} days.")
-        await self.message.channel.send(content=None,embed=embed)
+                            value=f"Counts the server emoji used in the last {self.days_to_count} days.")
+        await self.message.channel.send(content=None, embed=embed)
+# pylint: enable=too-few-public-methods
+
+# pylint: disable=too-few-public-methods
+class SimpleResponse(ActionInterface):
+    """Sending a simple response message back to response channel"""
+    def __init__(self, response_message: str):
+        super().__init__()
+        self.response = response_message
+
+    async def run_action(self):
+        await self.response_channel.send(self.response)
 # pylint: enable=too-few-public-methods

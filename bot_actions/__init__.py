@@ -13,15 +13,24 @@ class MessageHandler:
         self.command_character = system_settings.command_character
         self.admins = system_settings.admins
 
-    def parse_message(self, message, settings) -> actions.ActionInterface:
+    def parse_message(self, message: discord.message.Message, settings) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
         if not message.content:
             return None
+
+        # ignore messages from this and other bots
+        if message.author.bot:
+            return None
+
+        if not message.guild:
+            print(f'Message with id {message.id} has no guild (probably, DM to the bot), sending error message back')
+            return actions.SimpleResponse("Sorry, it's not enough food for me in DM!")
 
         author = message.author
         if str(author) in self.admins or author.guild_permissions.administrator:
             print(f'({datetime.utcnow()})',
                   f'Author: {message.author.display_name},',
+                  f'Message ID: {message.id}',
                   f'Message: {message.content}')
 
         if not message.content.startswith(self.command_character):
