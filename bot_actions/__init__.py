@@ -26,8 +26,10 @@ class MessageHandler:
             return None
 
         if not message.guild:
-            print(f'Message with id {message.id} has no guild (probably, DM to the bot).',
-                  'Sending error message back to the author.')
+            logging.info('(%s) Author: %s, Message ID: %d', datetime.utcnow(),
+                         message.author.display_name, message.id)
+            logging.warning('Message has no guild (probably, DM to the bot). ' +\
+                            'Sending error message back to the author.')
             return actions.SimpleResponse("Sorry, it's not enough food for me in DM!")
 
         command_character = self.system_settings.command_character
@@ -46,10 +48,8 @@ class MessageHandler:
             # The branch that gets called
             # when there is a command character at the start of a message
 
-        print(f'({datetime.utcnow()})',
-              f'Author: {message.author.display_name},',
-              f'Message ID: {message.id}',
-              f'Message: {message.content}')
+        logging.info('(%s) Author: %s, Message ID: %d, Message: %s', datetime.utcnow(),
+                     message.author.display_name, message.id, message.content)
 
         command = str(message.content.split(command_character, 1)[1].split(" ")[0]).lower()
 
@@ -62,7 +62,7 @@ class MessageHandler:
                 break
 
         if not result_action:
-            logging.error("Can't find action for command %s!", command)
+            logging.error("Can't find action for command '%s'!", command)
             return None
 
         action_class = self.action_dict[result_action]

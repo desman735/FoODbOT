@@ -1,5 +1,6 @@
 """Script to start the FoODbOT"""
 from datetime import datetime
+import logging
 from discord import Client
 from bot_settings import settings
 from bot_actions import MessageHandler
@@ -16,8 +17,8 @@ HANDLER = MessageHandler(SETTINGS.system_settings)
 @CLIENT.event
 async def on_ready():
     '''Runs on the bot start'''
-    print(f'FoODbOT started as a {CLIENT.user.name}, at {datetime.utcnow()}')
-    print(f'Bot ID is {CLIENT.user.id}')
+    logging.info('FoODbOT started as a %s, at %s', CLIENT.user.name, datetime.utcnow())
+    logging.info('Bot ID is %d', CLIENT.user.id)
     print('------')
 
 
@@ -25,7 +26,7 @@ async def on_ready():
 async def on_message(message):
     '''Runs at receiving the message'''
     if not HANDLER:
-        print('Error! No message handler found!')
+        logging.error('Error! No message handler found!')
         return
 
 #     if str(message.author) in SETTINGS.admins or \
