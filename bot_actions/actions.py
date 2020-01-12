@@ -1,11 +1,13 @@
 '''File to describe the interface for action and list of actions'''
 from datetime import timedelta
 import re
+import logging
 
 from discord import ChannelType
 from discord import errors
 from discord import Embed
-from bot_settings import update_animated_emoji_list
+from discord import Message
+from bot_settings import settings
 from . import functions
 
 
@@ -13,30 +15,45 @@ from . import functions
 class ActionInterface:
     '''Interface for async action to execute'''
 
-    def __init__(self):
+    def __init__(self, message: Message, bot_settings: settings.BotSettings,
+                 action_settings: settings.ActionSettings):
+        self.action_message = message
+        self.bot_settings = bot_settings
+        self.action_settings = action_settings
+
+        # create fields, that will be filled later
         self.response_channel = None
         self.client = None
-        self.characters_limit = 1000  # just in case
 
     async def run_action(self):
         '''Method to run async action'''
+
+    def is_called_by_admin(self) -> bool:
+        '''Checks, if the running action was initiated by administrator'''
+        if self.action_message.author.guild_permissions.administrator:
+            return True
+
+        if str(self.action_message.author) in self.bot_settings.system_settings.admins:
+            return True
+
+        return False
 # pylint: enable=too-few-public-methods
 
 
 class EmojiCounter(ActionInterface):
     '''Class, that counts emoji usage for a some period of time'''
 
-    def __init__(self, channels, days_to_count, response_channel):
-        super().__init__()
-        self.channels = []  # Should be Discord.py channels
-        self.days_to_count = None
-        self.response_channel = response_channel
+    def __init__(self, message: Message, bot_settings: settings.BotSettings,
+                 action_settings: settings.ActionSettings):
+        super().__init__(message, bot_settings, action_settings)
 
-        for channel in channels:
+        self.days_to_count = int(self.action_settings.settings['days_to_count'])
+        self.channels = []
+
+        guild_channels = self.action_message.guild.channels
+        for channel in guild_channels:
             if channel.type == ChannelType.text:  # filter channels by type
                 self.channels.append(channel)
-
-        self.days_to_count = days_to_count
 
     @staticmethod
     def get_server_emoji_dict(server):
@@ -77,11 +94,11 @@ class EmojiCounter(ActionInterface):
     async def run_action(self):
         '''Should be called once per bot request'''
         if not self.response_channel:# or not self.client:
-            print('No responce channel to answer')
+            logging.error('No responce channel to answer')
             return
 
         result = f'Counting emojis for the last {self.days_to_count} day(s), do not disturb...'
-        print(result)
+        logging.info(result)
         result_msg = await self.response_channel.send(result)
 
         check_time = timedelta(days=self.days_to_count)
@@ -89,15 +106,15 @@ class EmojiCounter(ActionInterface):
         emoji_dict = self.get_server_emoji_dict(self.response_channel.guild)
         async with self.response_channel.typing():
             for channel in self.channels:
-                print('Working with', channel)
+                logging.info('Working with %s', channel)
                 try:
                     await functions.handle_messages(self.client, channel,
                                                     check_time,
                                                     self.count_emoji_in_messages,
                                                     emoji_dict)
                 except errors.Forbidden:
-                    print(f"We have no access to {channel}")
-            print('Finished!')
+                    logging.warning("We have no access to %s", channel)
+            logging.info('Finished!')
             output = f"We found the following emojis in the last {self.days_to_count} day(s):\n"
             await result_msg.edit(content=output)
 
@@ -112,7 +129,7 @@ class EmojiCounter(ActionInterface):
             line = f"Emoji {emoji} was used {amount} times.\n"
 
             # Send message, if line will be too long after concat
-            if len(output) + len(line) > self.characters_limit:
+            if len(output) + len(line) > self.bot_settings.general_settings.characters_limit:
                 await self.response_channel.send(output)
                 output = ""
 
@@ -125,78 +142,54 @@ class EmojiCounter(ActionInterface):
 
 
 # pylint: disable=too-few-public-methods
-class AnimatedEmojiLister(ActionInterface):
-    '''Class that collects the animated emoji'''
-
-    def __init__(self, message, animated_emoji_dict):
-        super().__init__()
-        self.message = message
-        self.animated_emoji_dict = animated_emoji_dict
-
-    async def run_action(self):
-        '''Method to run async action'''
-        if self.message.server.name not in self.animated_emoji_dict.keys():
-            self.animated_emoji_dict[self.message.server.name] = []
-
-        message_words = self.message.content.split(" ")
-        animated_emojis = self.animated_emoji_dict[self.message.server.name]
-
-        if len(message_words) >= 2:
-            print(self.message.content+"\n" + message_words[1])
-            if message_words[1] == "add":
-                for emoji in message_words[2:]:
-                    if emoji not in animated_emojis:
-                        animated_emojis.append(emoji)
-                update_animated_emoji_list(self.message.server.name, animated_emojis)
-                await self.client.send_message(self.message.channel, "Added to the list")
-
-            elif message_words[1] == "remove":
-                for emoji in message_words[2:]:
-                    if emoji in animated_emojis:
-                        animated_emojis.remove(emoji)
-                update_animated_emoji_list(self.message.server.name, animated_emojis)
-                await self.client.send_message(self.message.channel, "Removed from the list")
-
-            elif message_words[1] == "print":
-                print("Hi")
-                if animated_emojis:
-                    result = "The following emoji are marked as animated\n"
-                    for emoji in animated_emojis:
-                        print(emoji)
-                        result += "{}\n".format(emoji)
-                    await self.client.send_message(self.message.channel,
-                                                   result)
-            else:
-                print("Animated emojis: No command given")
-# pylint: enable=too-few-public-methods
-
-# pylint: disable=too-few-public-methods
 class HelpMessage(ActionInterface):
     """Creates and prints the help message"""
-    def __init__(self, message, command_character, admins, days_to_count):
-        super().__init__()
-        self.message = message
-        self.command_character = command_character
-        self.admins = admins
-        self.days_to_count = days_to_count
 
     async def run_action(self):
-        embed = Embed(title="Help with FooDBoT commands",
-                      description=f"{self.client.user.name} commands accessible to {self.message.author.display_name}")
-        embed.add_field(name=f"{self.command_character}help", value="Displays this help message.")
-        if str(self.message.author) in self.admins or self.message.author.guild_permissions.administrator:
-            embed.add_field(name=f"{self.command_character}countEmoji",
-                            value=f"Counts the server emoji used in the last {self.days_to_count} days.")
-        await self.message.channel.send(content=None, embed=embed)
+        bot = self.client.user
+        message_author = self.action_message.author
+
+        description = (f"{bot.display_name} commands accessible to {message_author.display_name}\n"
+                       "All commands are case insensetive")
+        embed = Embed(title="Help with FooDBoT commands", description=description)
+
+        help_keywords = self.get_action_keywords_string('Help')
+        embed.add_field(name=help_keywords, value="Displays this help message.")
+
+        if self.is_called_by_admin():
+            count_keywords = self.get_action_keywords_string('CountEmoji')
+            actions_settings = self.bot_settings.action_settings['CountEmoji']
+            days_to_count = actions_settings.settings['days_to_count']
+            embed.add_field(name=count_keywords,
+                            value=f"Counts the server emoji used in the last {days_to_count} days.")
+
+        await self.response_channel.send(content=None, embed=embed)
+
+
+    def get_action_keywords_string(self, action_name: str) -> str:
+        '''
+        Returns human-readable string of all keywords for the action
+        Output format is '!keyword1 or !keyword2 or ...'
+        '''
+        command_character = self.bot_settings.system_settings.command_character
+        keywords = self.bot_settings.action_settings[action_name].keywords
+        result = ''
+
+        for keyword in keywords:
+            if result:
+                result = result + ' or '
+            result = result + command_character + keyword
+
+        return result
+
 # pylint: enable=too-few-public-methods
 
-# pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods, super-init-not-called
 class SimpleResponse(ActionInterface):
     """Sending a simple response message back to response channel"""
     def __init__(self, response_message: str):
-        super().__init__()
         self.response = response_message
 
     async def run_action(self):
         await self.response_channel.send(self.response)
-# pylint: enable=too-few-public-methods
+# pylint: enable=too-few-public-methods, super-init-not-called

@@ -1,7 +1,9 @@
 '''File for functions, that implements bot functions'''
 
 from datetime import datetime
+import logging
 import discord
+from bot_settings import settings
 from . import actions
 
 
@@ -9,63 +11,61 @@ from . import actions
 class MessageHandler:
     '''Class to handle commands to the bot'''
 
-    def __init__(self, system_settings):
-        self.command_character = system_settings.command_character
-        self.admins = system_settings.admins
+    def __init__(self, system_settings: settings.SystemSettings):
+        self.system_settings = system_settings
+        self.action_dict = {
+            "CountEmoji": actions.EmojiCounter,
+            "Help": actions.HelpMessage
+        }
 
-    def parse_message(self, message: discord.message.Message, settings) -> actions.ActionInterface:
+    def parse_message(self, message: discord.message.Message,
+                      bot_settings: settings.BotSettings) -> actions.ActionInterface:
         '''Method that parse command and returns corresponding method'''
-        if not message.content:
-            return None
-
-        # ignore messages from this and other bots
-        if message.author.bot:
+        # ignore empty messages and messages from bots
+        if not message.content or message.author.bot:
             return None
 
         if not message.guild:
-            print(f'Message with id {message.id} has no guild (probably, DM to the bot), sending error message back')
+            print(f'Message with id {message.id} has no guild (probably, DM to the bot).',
+                  'Sending error message back to the author.')
             return actions.SimpleResponse("Sorry, it's not enough food for me in DM!")
 
-        author = message.author
-        if str(author) in self.admins or author.guild_permissions.administrator:
-            print(f'({datetime.utcnow()})',
-                  f'Author: {message.author.display_name},',
-                  f'Message ID: {message.id}',
-                  f'Message: {message.content}')
+        command_character = self.system_settings.command_character
 
-        if not message.content.startswith(self.command_character):
+        if not message.content.startswith(command_character):
             # The branch that gets called
             # when there is no command character at the start of a message.
             # Use for tasks that have to check every message.
             # self.messageEmojiTester(message)
             return None
 
-        if message.content.startswith(self.command_character):
+        # early return in case when message not starts with command character
+        # no need for additional check
+
+        # if message.content.startswith(self.command_character):
             # The branch that gets called
             # when there is a command character at the start of a message
 
-            # todo: return different actions in different cases
-            # todo: parse for amount of days. Some other time structure?
-            days_to_count = int(settings.action_settings['CountEmoji']['days_to_count'])
-            command_name = message.content.split(self.command_character, 1)[1].split(" ")[0]
-            admin_action_dict = {
-                "countEmoji":
-                    actions.EmojiCounter(message.guild.channels, days_to_count, message.channel),
-                # "animatedEmojis":
-                #     actions.AnimatedEmojiLister(message, settings.animated_emoji_dict)
-            }
+        print(f'({datetime.utcnow()})',
+              f'Author: {message.author.display_name},',
+              f'Message ID: {message.id}',
+              f'Message: {message.content}')
 
-            general_action_dict = {
-                "help": actions.HelpMessage(message, self.command_character,
-                                            self.admins, days_to_count)}
+        command = str(message.content.split(command_character, 1)[1].split(" ")[0]).lower()
 
-            if command_name in general_action_dict.keys():
-                return general_action_dict[command_name]
+        # find an action based on keywords from settings
+        result_action = None
+        for action, setup in bot_settings.action_settings.items():
+            # setup must contains keywords fields based on settings code
+            if command in setup.keywords:
+                result_action = action
+                break
 
-            if command_name in admin_action_dict.keys():
-                if str(author) in self.admins or author.guild_permissions.administrator:
-                    return admin_action_dict[command_name]
+        if not result_action:
+            logging.error("Can't find action for command %s!", command)
+            return None
 
-        return None
+        action_class = self.action_dict[result_action]
+        return action_class(message, bot_settings, bot_settings.action_settings[result_action])
 
 # pylint: enable=too-few-public-methods

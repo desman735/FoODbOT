@@ -37,7 +37,6 @@ async def on_message(message):
 
     action.client = CLIENT
     action.response_channel = message.channel
-    action.characters_limit = SETTINGS.general_settings.characters_limit
     await action.run_action()
 #
 #
