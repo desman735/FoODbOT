@@ -9,11 +9,13 @@ The other source contains stuff that benefits from being separate
 (for example the bot token etc.)
 '''
 import configparser
+import logging
 import json
 from collections import namedtuple
 
-SystemSettings = namedtuple('SystemSettings', ['token', 'command_character', 'admins'])
+SystemSettings = namedtuple('SystemSettings', ['token', 'command_character', 'admins', 'log_level'])
 GeneralSettings = namedtuple('GeneralSettings', ['characters_limit'])
+ActionSettings = namedtuple('ActionSettings', ['keywords', 'settings'])
 
 class BotSettings:
     """
@@ -31,18 +33,20 @@ class BotSettings:
         self.mutable_config_path = mutable_config_path
 
         # Init fields with default data on the creation
-        self.system_settings = SystemSettings('', '!', ['Desman735#0679', 'KaTaai#9096'])
+        self.system_settings = SystemSettings('', '!', ['Desman735#0679', 'KaTaai#9096'], 20)
         self.general_settings = GeneralSettings(2000)
         self.action_settings = dict()
-        self.action_settings['CountEmoji'] = {'days_to_count': 7}
+        self.action_settings['CountEmoji'] = ActionSettings(['CountEmoji', 'emoji'],
+                                                            {'days_to_count': 7})
+        self.action_settings['Help'] = ActionSettings(['help', 'info'], {})
 
         # Try to update settings from file
         if read_on_init:
             try:
                 self.read_settings()
             except KeyError:
-                print("An error occurred while reading the bot settings\n"
-                      "Updating missing settings in files to default values")
+                logging.error("An error occurred while reading the bot settings. "
+                              "Updating missing settings in files to default values")
                 self.fix_settings_file()
                 self.read_settings()
 
@@ -53,23 +57,16 @@ class BotSettings:
         config.read(self.config_path)
 
         # system settings
-        admins = config['System']['admins']
-        # configparser saves strings with ' at creation, but json requires ", so we replacing them
-        admins = admins.replace("'", '"')
-        admins = json.loads(admins)
+        admins = self.convert_string_to_array(config['System']['admins'])
         command_character = config['System']['command_character']
+        log_level = int(config['System']['log_level'])
+        logging.getLogger().setLevel(log_level)
 
         # general settings
         characters_limit = int(config['General']['characters_limit'])
 
-        self.action_settings = dict()
         ignored_action_sections = ['System', 'General', 'DEFAULT']
-
-        # action settings
-        for section in config:
-            if section not in ignored_action_sections:
-                self.action_settings[section] = dict(config[section])
-
+        self.read_action_settings(config, ignored_action_sections)
 
         mutable_config = configparser.ConfigParser()
         # changing default key transformer to keep the case of keys on file read
@@ -90,8 +87,40 @@ class BotSettings:
                     self.action_settings[section] = dict(mutable_config[section])
 
         # init settings structures
-        self.system_settings = SystemSettings(token, command_character, admins)
+        self.system_settings = SystemSettings(token, command_character, admins, log_level)
         self.general_settings = GeneralSettings(characters_limit)
+
+    def read_action_settings(self, config: configparser.ConfigParser, ignored_sections: [str]):
+        """reads from config settings for custom actions"""
+        self.action_settings = dict()
+
+        ignored_section_fields = ['keywords']
+
+        # action settings
+        for section in config:
+            if section in ignored_sections:
+                continue
+
+            keywords = []
+            if 'keywords' in config[section]:
+                keywords = BotSettings.convert_string_to_array(config[section]['keywords'])
+                # lowercase all keywords, they are case-insensitive
+                keywords = list(map(str.lower, keywords))
+            else:
+                message = f'Action {section} not contains keywords setup! '
+                message = message + 'Action name will be used as a keyword'
+                logging.warning(message)
+                keywords = [section.lower()]
+
+            settings = {}
+            for field in config[section]:
+                if field in ignored_section_fields:
+                    continue
+                settings[field] = config[section][field]
+
+            self.action_settings[section] = ActionSettings(keywords, settings)
+            logging.info('Add action %s to active actions', section)
+
 
     def write_settings(self):
         """Writes current settings to both files, overriding existing settings"""
@@ -100,11 +129,16 @@ class BotSettings:
         config = configparser.ConfigParser()
 
         config['System'] = {'command_character': self.system_settings.command_character,
-                            'admins': self.system_settings.admins}
+                            'admins': self.system_settings.admins,
+                            'log_level': self.system_settings.log_level}
         config['General'] = {'characters_limit': self.general_settings.characters_limit}
 
-        for action in self.action_settings:
-            config[action] = self.action_settings[action]
+        for action, action_setup in self.action_settings.items():
+            if action_setup.settings:
+                config[action] = action_setup.settings
+            else:
+                config[action] = {}
+            config[action]['keywords'] = str(action_setup.keywords)
 
         with open(self.config_path, 'w') as configfile:
             config.write(configfile)
@@ -128,32 +162,51 @@ class BotSettings:
         config = configparser.ConfigParser()
         config.read(self.config_path)
 
+        self.update_system_settings(config)
+        self.update_general_settings(config)
+        self.update_actions_settings(config)
+
+        with open(self.config_path, 'w') as configfile:
+            config.write(configfile)
+
+    def update_system_settings(self, config: configparser.ConfigParser):
+        """Updates system settings section of the config file"""
         if 'System' in config:
             system = config['System']
             if 'command_character' not in system:
                 system['command_character'] = self.system_settings.command_character
             if 'admins' not in system:
                 system['admins'] = self.system_settings.admins
+            if 'log_level' not in system:
+                system['log_level'] = str(self.system_settings.log_level)
         else:
             config['System'] = {'command_character': self.system_settings.command_character,
-                                'admins': self.system_settings.admins}
+                                'admins': self.system_settings.admins,
+                                'log_level': self.system_settings.log_level}
 
+    def update_general_settings(self, config: configparser.ConfigParser):
+        """Updates general settings section of the config file"""
         if 'General' in config:
             if 'characters_limit' not in config['General']:
                 config['General']['characters_limit'] = self.general_settings.characters_limit
         else:
             config['General'] = {'characters_limit': self.general_settings.characters_limit}
 
-        for action in self.action_settings:
+    def update_actions_settings(self, config: configparser.ConfigParser):
+        """Updates actions settings sections of the config file"""
+        for action, action_setup in self.action_settings.items():
             if action in config:
-                for setup in action:
+                if 'keywords' not in config[action]:
+                    config[action]['keywords'] = str(action_setup.keywords)
+                for setup in action_setup.settings:
                     if setup not in config[action]:
-                        config[action][setup] = self.action_settings[action][setup]
+                        config[action][setup] = str(action_setup.settings[setup])
             else:
-                config[action] = self.action_settings[action]
-
-        with open(self.config_path, 'w') as configfile:
-            config.write(configfile)
+                if action_setup.settings:
+                    config[action] = action_setup.settings
+                else:
+                    config[action] = {}
+                config[action]['keywords'] = str(action_setup.keywords)
 
     def fix_mutable_config(self):
         """
@@ -162,8 +215,8 @@ class BotSettings:
         """
         config = configparser.ConfigParser()
 
-        # changing default key transformer to keep the case of keys on file update
-        # default key transformer changes key values to lowercase
+        # changing default key transformer to save the case of key value on the file update
+        # default key transformer changes key to lowercase
         # removed due to new settings naming convention
         # mutable_config.optionxform = str
 
@@ -177,3 +230,10 @@ class BotSettings:
 
         with open(self.mutable_config_path, 'w') as configfile:
             config.write(configfile)
+
+    @staticmethod
+    def convert_string_to_array(array_str: str) -> [str]:
+        """Takes an array string read from settings file and converts it to the array"""
+        # configparser saves strings with ' at creation, but json requires ", so we replacing them
+        array_str = array_str.replace("'", '"')
+        return json.loads(array_str)
