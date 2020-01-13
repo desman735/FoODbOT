@@ -25,11 +25,11 @@ class MessageHandler:
         if not message.content or message.author.bot:
             return None
 
+        # in case of DM to the bot
         if not message.guild:
             logging.info('(%s) Author: %s, Message ID: %d', datetime.utcnow(),
                          message.author.display_name, message.id)
-            logging.warning('Message has no guild (probably, DM to the bot). ' +\
-                            'Sending error message back to the author.')
+            logging.warning('Message has no guild. Sending error message back to the author.')
             return actions.SimpleResponse("Sorry, it's not enough food for me in DM!")
 
         command_character = self.system_settings.command_character
@@ -60,6 +60,10 @@ class MessageHandler:
             if command in setup.keywords:
                 result_action = action
                 break
+
+        if not bot_settings.action_settings[result_action].is_active:
+            logging.info("Called action %s is not active", result_action)
+            return None
 
         if not result_action:
             logging.error("Can't find action for command '%s'!", command)

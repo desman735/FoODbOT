@@ -153,15 +153,17 @@ class HelpMessage(ActionInterface):
                        "All commands are case insensetive")
         embed = Embed(title="Help with FooDBoT commands", description=description)
 
-        help_keywords = self.get_action_keywords_string('Help')
-        embed.add_field(name=help_keywords, value="Displays this help message.")
+        if self.bot_settings.action_settings['Help'].is_active:
+            help_keywords = self.get_action_keywords_string('Help')
+            embed.add_field(name=help_keywords, value="Displays this help message.")
 
         if self.is_called_by_admin():
-            count_keywords = self.get_action_keywords_string('CountEmoji')
-            actions_settings = self.bot_settings.action_settings['CountEmoji']
-            days_to_count = actions_settings.settings['days_to_count']
-            embed.add_field(name=count_keywords,
-                            value=f"Counts the server emoji used in the last {days_to_count} days.")
+            if self.bot_settings.action_settings['CountEmoji'].is_active:
+                count_keywords = self.get_action_keywords_string('CountEmoji')
+                actions_settings = self.bot_settings.action_settings['CountEmoji']
+                days_to_count = actions_settings.settings['days_to_count']
+                description = f"Counts the server emoji used in the last {days_to_count} days."
+                embed.add_field(name=count_keywords, value=description)
 
         await self.response_channel.send(content=None, embed=embed)
 

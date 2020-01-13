@@ -15,7 +15,7 @@ from collections import namedtuple
 
 SystemSettings = namedtuple('SystemSettings', ['token', 'command_character', 'admins', 'log_level'])
 GeneralSettings = namedtuple('GeneralSettings', ['characters_limit'])
-ActionSettings = namedtuple('ActionSettings', ['keywords', 'settings'])
+ActionSettings = namedtuple('ActionSettings', ['is_active', 'keywords', 'settings'])
 
 class BotSettings:
     """
@@ -36,9 +36,9 @@ class BotSettings:
         self.system_settings = SystemSettings('', '!', ['Desman735#0679', 'KaTaai#9096'], 20)
         self.general_settings = GeneralSettings(2000)
         self.action_settings = dict()
-        self.action_settings['CountEmoji'] = ActionSettings(['CountEmoji', 'emoji'],
+        self.action_settings['CountEmoji'] = ActionSettings(True, ['CountEmoji', 'emoji'],
                                                             {'days_to_count': 7})
-        self.action_settings['Help'] = ActionSettings(['help', 'info'], {})
+        self.action_settings['Help'] = ActionSettings(True, ['help', 'info'], {})
 
         # Try to update settings from file
         if read_on_init:
@@ -94,12 +94,20 @@ class BotSettings:
         """reads from config settings for custom actions"""
         self.action_settings = dict()
 
-        ignored_section_fields = ['keywords']
+        ignored_section_fields = ['is_active', 'keywords']
 
         # action settings
         for section in config:
             if section in ignored_sections:
                 continue
+
+            is_active = True
+            if 'is_active' in config[section]:
+                is_active = json.loads(config[section]['is_active'].lower())
+            else:
+                message = f'Action {section} not contains is_active field! '
+                message = message + 'Action will be enabled by default'
+                logging.warning(message)
 
             keywords = []
             if 'keywords' in config[section]:
@@ -118,8 +126,8 @@ class BotSettings:
                     continue
                 settings[field] = config[section][field]
 
-            self.action_settings[section] = ActionSettings(keywords, settings)
-            logging.info('Add action %s to active actions', section)
+            self.action_settings[section] = ActionSettings(is_active, keywords, settings)
+            logging.info('Add action %s to possible actions', section)
 
 
     def write_settings(self):
@@ -139,6 +147,7 @@ class BotSettings:
             else:
                 config[action] = {}
             config[action]['keywords'] = str(action_setup.keywords)
+            config[action]['is_active'] = str(action_setup.is_active)
 
         with open(self.config_path, 'w') as configfile:
             config.write(configfile)
@@ -198,6 +207,8 @@ class BotSettings:
             if action in config:
                 if 'keywords' not in config[action]:
                     config[action]['keywords'] = str(action_setup.keywords)
+                if 'is_active' not in config[action]:
+                    config[action]['is_active'] = str(action_setup.is_active)
                 for setup in action_setup.settings:
                     if setup not in config[action]:
                         config[action][setup] = str(action_setup.settings[setup])
@@ -207,6 +218,7 @@ class BotSettings:
                 else:
                     config[action] = {}
                 config[action]['keywords'] = str(action_setup.keywords)
+                config[action]['is_active'] = str(action_setup.is_active)
 
     def fix_mutable_config(self):
         """
