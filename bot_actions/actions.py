@@ -129,7 +129,7 @@ class EmojiCounter(ActionInterface):
             line = f"Emoji {emoji} was used {amount} times.\n"
 
             # Send message, if line will be too long after concat
-            if len(output) + len(line) > self.bot_settings.general_settings.characters_limit:
+            if len(output) + len(line) > self.bot_settings.system_settings.characters_limit:
                 await self.response_channel.send(output)
                 output = ""
 

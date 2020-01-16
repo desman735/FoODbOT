@@ -13,8 +13,8 @@ import logging
 import json
 from collections import namedtuple
 
-SystemSettings = namedtuple('SystemSettings', ['token', 'command_character', 'admins', 'log_level'])
-GeneralSettings = namedtuple('GeneralSettings', ['characters_limit'])
+SystemSettings = namedtuple('SystemSettings', ['token', 'command_character', 'admins',
+                                               'characters_limit', 'log_level'])
 ActionSettings = namedtuple('ActionSettings', ['is_active', 'keywords', 'settings'])
 
 class BotSettings:
@@ -33,12 +33,11 @@ class BotSettings:
         self.mutable_config_path = mutable_config_path
 
         # Init fields with default data on the creation
-        self.system_settings = SystemSettings('', '!', ['Desman735#0679', 'KaTaai#9096'], 20)
-        self.general_settings = GeneralSettings(2000)
+        self.system_settings = SystemSettings('', '!', ['Desman735#0679', 'KaTaai#9096'], 2000, 20)
         self.action_settings = dict()
-        self.action_settings['CountEmoji'] = ActionSettings(True, ['CountEmoji', 'emoji'],
+        self.action_settings['CountEmoji'] = ActionSettings(True, ['CountEmoji', 'StatEmoji'],
                                                             {'days_to_count': 7})
-        self.action_settings['Help'] = ActionSettings(True, ['help', 'info'], {})
+        self.action_settings['Help'] = ActionSettings(True, ['help'], {})
 
         # Try to update settings from file
         if read_on_init:
@@ -59,13 +58,11 @@ class BotSettings:
         # system settings
         admins = self.convert_string_to_array(config['System']['admins'])
         command_character = config['System']['command_character']
+        characters_limit = int(config['System']['characters_limit'])
         log_level = int(config['System']['log_level'])
         logging.getLogger().setLevel(log_level)
 
-        # general settings
-        characters_limit = int(config['General']['characters_limit'])
-
-        ignored_action_sections = ['System', 'General', 'DEFAULT']
+        ignored_action_sections = ['System', 'DEFAULT']
         self.read_action_settings(config, ignored_action_sections)
 
         mutable_config = configparser.ConfigParser()
@@ -87,8 +84,8 @@ class BotSettings:
                     self.action_settings[section] = dict(mutable_config[section])
 
         # init settings structures
-        self.system_settings = SystemSettings(token, command_character, admins, log_level)
-        self.general_settings = GeneralSettings(characters_limit)
+        self.system_settings = SystemSettings(token, command_character, admins, characters_limit,
+                                              log_level)
 
     def read_action_settings(self, config: configparser.ConfigParser, ignored_sections: [str]):
         """reads from config settings for custom actions"""
@@ -138,8 +135,8 @@ class BotSettings:
 
         config['System'] = {'command_character': self.system_settings.command_character,
                             'admins': self.system_settings.admins,
+                            'characters_limit': self.system_settings.characters_limit,
                             'log_level': self.system_settings.log_level}
-        config['General'] = {'characters_limit': self.general_settings.characters_limit}
 
         for action, action_setup in self.action_settings.items():
             if action_setup.settings:
@@ -172,7 +169,6 @@ class BotSettings:
         config.read(self.config_path)
 
         self.update_system_settings(config)
-        self.update_general_settings(config)
         self.update_actions_settings(config)
 
         with open(self.config_path, 'w') as configfile:
@@ -186,20 +182,15 @@ class BotSettings:
                 system['command_character'] = self.system_settings.command_character
             if 'admins' not in system:
                 system['admins'] = self.system_settings.admins
+            if 'characters_limit' not in system:
+                system['characters_limit'] = str(self.system_settings.characters_limit)
             if 'log_level' not in system:
                 system['log_level'] = str(self.system_settings.log_level)
         else:
             config['System'] = {'command_character': self.system_settings.command_character,
                                 'admins': self.system_settings.admins,
+                                'characters_limit': self.system_settings.characters_limit,
                                 'log_level': self.system_settings.log_level}
-
-    def update_general_settings(self, config: configparser.ConfigParser):
-        """Updates general settings section of the config file"""
-        if 'General' in config:
-            if 'characters_limit' not in config['General']:
-                config['General']['characters_limit'] = self.general_settings.characters_limit
-        else:
-            config['General'] = {'characters_limit': self.general_settings.characters_limit}
 
     def update_actions_settings(self, config: configparser.ConfigParser):
         """Updates actions settings sections of the config file"""

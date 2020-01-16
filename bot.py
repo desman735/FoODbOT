@@ -38,7 +38,9 @@ async def on_message(message):
 
     action.client = CLIENT
     action.response_channel = message.channel
+    logging.info('Running action %s', action)
     await action.run_action()
+    logging.info('Action %s finished', action)
 #
 #
 # @CLIENT.event
