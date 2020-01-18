@@ -4,10 +4,10 @@ from datetime import datetime
 import logging
 import discord
 from bot_settings import settings
+from .actions import ActionInterface
 from . import actions
 
 
-# pylint: disable=too-few-public-methods
 class MessageHandler:
     '''Class to handle commands to the bot'''
 
@@ -18,7 +18,7 @@ class MessageHandler:
             "Help": actions.HelpMessage
         }
 
-    def parse_message(self, message: discord.message.Message) -> actions.ActionInterface:
+    def parse_message(self, message: discord.message.Message) -> ActionInterface:
         '''Method that parse command and returns corresponding method'''
         # ignore empty messages and messages from bots
         if not message.content or message.author.bot:
@@ -85,48 +85,10 @@ class MessageHandler:
             logging.info("Called action '%s' is not active", result_action)
             return None, None
 
-        if not self.is_action_allowed(result_action_settings, message.author):
+        if not ActionInterface.is_action_allowed(message.author, result_action_settings,
+                                                 self.bot_settings.system_settings):
             logging.info("Called action '%s' is forbidden for user '%s'", result_action,
                          message.author.display_name)
             return None, None
 
         return result_action, result_action_settings
-
-    def is_action_allowed(self, action_settings: settings.ActionSettings, user: discord.User) \
-        -> bool:
-        '''
-        Checks, if the user is allowed to use an action.
-        User will be allowed to use action if they are in the whitelist and not in the blacklist.
-        Admins are allowed to use any actions.
-        '''
-
-        if user.guild_permissions.administrator:
-            return True
-
-        if str(user) in self.bot_settings.system_settings.admins:
-            return True
-
-        userspaces = [str(user)]
-        for role in user.roles:
-            userspaces.append(str(role))
-
-        is_in_whitelist = False
-        # Empty whitelist means everyone is in whitelist
-        if action_settings.call_whitelist:
-            for userspace in userspaces:
-                if userspace in action_settings.call_whitelist:
-                    is_in_whitelist = True
-                    break
-        else:
-            is_in_whitelist = True
-
-        is_in_blacklist = False
-        # Empty blacklist means noone is in blacklist
-        for userspace in userspaces:
-            if userspace in action_settings.call_blacklist:
-                is_in_blacklist = True
-                break
-
-        return is_in_whitelist and not is_in_blacklist
-
-# pylint: enable=too-few-public-methods
