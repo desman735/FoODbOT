@@ -30,6 +30,9 @@ class BotSettings:
         mutable_config_path contains settings, that are unique for each instance of the bot
         if read_on_init is False, then settings will be initiated with default values
         """
+        # Will be filled later to avoid cyclic import
+        self.action_dict = {}
+
         self.config_path = config_path
         self.mutable_config_path = mutable_config_path
 

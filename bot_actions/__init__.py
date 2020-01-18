@@ -13,7 +13,7 @@ class MessageHandler:
 
     def __init__(self, bot_settings: settings.BotSettings):
         self.bot_settings = bot_settings
-        self.action_dict = {
+        bot_settings.action_dict = {
             "CountEmoji": actions.EmojiCounter,
             "Help": actions.HelpMessage
         }
@@ -58,7 +58,7 @@ class MessageHandler:
         if not action:
             return None
 
-        action_class = self.action_dict[action]
+        action_class = self.bot_settings.action_dict[action]
         return action_class(message, self.bot_settings, action_settings)
 
     def get_action_by_command(self, message: discord.message.Message, command: str) \

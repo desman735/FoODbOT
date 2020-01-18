@@ -11,7 +11,6 @@ from bot_settings import settings
 from . import functions
 
 
-# pylint: disable=too-few-public-methods
 class ActionInterface:
     '''Interface for async action to execute'''
 
@@ -37,11 +36,22 @@ class ActionInterface:
             return True
 
         return False
-# pylint: enable=too-few-public-methods
+
+# pylint: disable=unused-argument
+    @staticmethod
+    def get_help_message(action_settings: settings.ActionSettings) -> str:
+        '''Returns help message for the action'''
+        return ''
+#pylint: enable=unused-argument
 
 
 class EmojiCounter(ActionInterface):
     '''Class, that counts emoji usage for a some period of time'''
+
+    @staticmethod
+    def get_help_message(action_settings: settings.ActionSettings) -> str:
+        days_to_count = action_settings.settings['days_to_count']
+        return f'Counts the server emoji used in the last {days_to_count} days.'
 
     def __init__(self, message: Message, bot_settings: settings.BotSettings,
                  action_settings: settings.ActionSettings):
@@ -141,9 +151,12 @@ class EmojiCounter(ActionInterface):
             await self.response_channel.send(output)
 
 
-# pylint: disable=too-few-public-methods
 class HelpMessage(ActionInterface):
     """Creates and prints the help message"""
+
+    @staticmethod
+    def get_help_message(action_settings: settings.ActionSettings) -> str:
+        return "Displays this help message."
 
     async def run_action(self):
         bot = self.client.user
@@ -153,20 +166,17 @@ class HelpMessage(ActionInterface):
                        "All commands are case insensetive")
         embed = Embed(title="Help with FooDBoT commands", description=description)
 
-        if self.bot_settings.action_settings['Help'].is_active:
-            help_keywords = self.get_action_keywords_string('Help')
-            embed.add_field(name=help_keywords, value="Displays this help message.")
+        for action, action_class in self.bot_settings.action_dict.items():
+            action_setup = self.bot_settings.action_settings[action]
+            if not action_setup.is_active:
+                continue
 
-        if self.is_called_by_admin():
-            if self.bot_settings.action_settings['CountEmoji'].is_active:
-                count_keywords = self.get_action_keywords_string('CountEmoji')
-                actions_settings = self.bot_settings.action_settings['CountEmoji']
-                days_to_count = actions_settings.settings['days_to_count']
-                description = f"Counts the server emoji used in the last {days_to_count} days."
-                embed.add_field(name=count_keywords, value=description)
+            keywords = self.get_action_keywords_string(action)
+            help_mesage = action_class.get_help_message(action_setup)
+
+            embed.add_field(name=keywords, value=help_mesage)
 
         await self.response_channel.send(content=None, embed=embed)
-
 
     def get_action_keywords_string(self, action_name: str) -> str:
         '''
@@ -183,8 +193,6 @@ class HelpMessage(ActionInterface):
             result = result + command_character + keyword
 
         return result
-
-# pylint: enable=too-few-public-methods
 
 # pylint: disable=too-few-public-methods, super-init-not-called
 class SimpleResponse(ActionInterface):
