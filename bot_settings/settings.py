@@ -15,7 +15,8 @@ from collections import namedtuple
 
 SystemSettings = namedtuple('SystemSettings', ['token', 'command_character', 'admins',
                                                'characters_limit', 'log_level'])
-ActionSettings = namedtuple('ActionSettings', ['is_active', 'keywords', 'settings'])
+ActionSettings = namedtuple('ActionSettings', ['is_active', 'keywords', 'call_whitelist',
+                                               'call_blacklist', 'settings'])
 
 class BotSettings:
     """
@@ -36,8 +37,8 @@ class BotSettings:
         self.system_settings = SystemSettings('', '!', ['Desman735#0679', 'KaTaai#9096'], 2000, 20)
         self.action_settings = dict()
         self.action_settings['CountEmoji'] = ActionSettings(True, ['CountEmoji', 'StatEmoji'],
-                                                            {'days_to_count': 7})
-        self.action_settings['Help'] = ActionSettings(True, ['help'], {})
+                                                            [], [], {'days_to_count': 7})
+        self.action_settings['Help'] = ActionSettings(True, ['help'], [], [], {})
 
         # Try to update settings from file
         if read_on_init:
@@ -91,7 +92,7 @@ class BotSettings:
         """reads from config settings for custom actions"""
         self.action_settings = dict()
 
-        ignored_section_fields = ['is_active', 'keywords']
+        ignored_section_fields = ['is_active', 'keywords', 'call_whitelist', 'call_blacklist']
 
         # action settings
         for section in config:
@@ -117,13 +118,30 @@ class BotSettings:
                 logging.warning(message)
                 keywords = [section.lower()]
 
+            whitelist = []
+            if 'call_whitelist' in config[section]:
+                whitelist = BotSettings.convert_string_to_array(config[section]['call_whitelist'])
+            else:
+                message = f'Action {section} not contains call whitelist! '
+                message = message + 'Action is allowed to everyone except the blacklist'
+                logging.warning(message)
+
+            blacklist = []
+            if 'call_blacklist' in config[section]:
+                blacklist = BotSettings.convert_string_to_array(config[section]['call_blacklist'])
+            else:
+                message = f'Action {section} not contains call blacklist! '
+                message = message + 'Nobody is banned from using an action'
+                logging.warning(message)
+
             settings = {}
             for field in config[section]:
                 if field in ignored_section_fields:
                     continue
                 settings[field] = config[section][field]
 
-            self.action_settings[section] = ActionSettings(is_active, keywords, settings)
+            self.action_settings[section] = ActionSettings(is_active, keywords, whitelist,
+                                                           blacklist, settings)
             logging.info('Add action %s to possible actions', section)
 
 
@@ -145,6 +163,8 @@ class BotSettings:
                 config[action] = {}
             config[action]['keywords'] = str(action_setup.keywords)
             config[action]['is_active'] = str(action_setup.is_active)
+            config[action]['call_whitelist'] = str(action_setup.call_whitelist)
+            config[action]['call_blacklist'] = str(action_setup.call_blacklist)
 
         with open(self.config_path, 'w') as configfile:
             config.write(configfile)
@@ -179,9 +199,9 @@ class BotSettings:
         if 'System' in config:
             system = config['System']
             if 'command_character' not in system:
-                system['command_character'] = self.system_settings.command_character
+                system['command_character'] = str(self.system_settings.command_character)
             if 'admins' not in system:
-                system['admins'] = self.system_settings.admins
+                system['admins'] = str(self.system_settings.admins)
             if 'characters_limit' not in system:
                 system['characters_limit'] = str(self.system_settings.characters_limit)
             if 'log_level' not in system:
@@ -200,6 +220,10 @@ class BotSettings:
                     config[action]['keywords'] = str(action_setup.keywords)
                 if 'is_active' not in config[action]:
                     config[action]['is_active'] = str(action_setup.is_active)
+                if 'call_whitelist' not in config[action]:
+                    config[action]['call_whitelist'] = str(action_setup.call_whitelist)
+                if 'call_blacklist' not in config[action]:
+                    config[action]['call_blacklist'] = str(action_setup.call_blacklist)
                 for setup in action_setup.settings:
                     if setup not in config[action]:
                         config[action][setup] = str(action_setup.settings[setup])
@@ -210,6 +234,8 @@ class BotSettings:
                     config[action] = {}
                 config[action]['keywords'] = str(action_setup.keywords)
                 config[action]['is_active'] = str(action_setup.is_active)
+                config[action]['call_whitelist'] = str(action_setup.call_whitelist)
+                config[action]['call_blacklist'] = str(action_setup.call_blacklist)
 
     def fix_mutable_config(self):
         """
