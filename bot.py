@@ -8,7 +8,7 @@ from bot_actions import MessageHandler
 
 SETTINGS = settings.BotSettings('settings.ini', 'mutableSettings.ini')
 CLIENT = Client()
-HANDLER = MessageHandler(SETTINGS.system_settings)
+HANDLER = MessageHandler(SETTINGS)
 
 # todo: check emoji group before counting
 # todo: admins by roles
@@ -32,7 +32,7 @@ async def on_message(message):
 #     if str(message.author) in SETTINGS.admins or \
 #             message.author.guild_permissions.administrator:
 #         await message.channel.send("Hi")
-    action = HANDLER.parse_message(message, SETTINGS)
+    action = HANDLER.parse_message(message)
     if not action:
         return
 
