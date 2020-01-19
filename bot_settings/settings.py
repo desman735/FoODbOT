@@ -20,7 +20,7 @@ ActionSettings = namedtuple('ActionSettings', ['is_active', 'keywords', 'call_wh
 
 class BotSettings:
     """
-    Settings object, contatins current state of the bot settings and connected files
+    Settings object, contains current state of the bot settings and connected files
     Can update state from files or update files to current state
     """
 
