@@ -13,8 +13,8 @@ async def handle_messages(client, channel, check_time, handler, container):
         is_empty = True  # if there is any messages between start and stop
         # todo: look for a better way to check it
 
-        async for msg in channel.history(limit = None, before=start,
-                                          after=stop_time):
+        async for msg in channel.history(limit=None, before=start,
+                                         after=stop_time):
             is_empty = False
             start = msg
             start_time = msg.created_at

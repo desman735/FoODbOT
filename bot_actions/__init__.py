@@ -37,15 +37,7 @@ class MessageHandler:
             # The branch that gets called
             # when there is no command character at the start of a message.
             # Use for tasks that have to check every message.
-            # self.messageEmojiTester(message)
             return None
-
-        # early return in case when message not starts with command character
-        # no need for additional check
-
-        # if message.content.startswith(self.command_character):
-            # The branch that gets called
-            # when there is a command character at the start of a message
 
         logging.info('(%s) Author: %s, Message ID: %d, Message: %s', datetime.utcnow(),
                      message.author.display_name, message.id, message.content)

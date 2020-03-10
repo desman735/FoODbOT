@@ -224,12 +224,13 @@ class HelpMessage(ActionInterface):
 
         return result
 
-# pylint: disable=too-few-public-methods, super-init-not-called
+# pylint: disable=too-few-public-methods
 class SimpleResponse(ActionInterface):
     """Sending a simple response message back to response channel"""
     def __init__(self, response_message: str):
+        super().__init__(None, None, None)
         self.response = response_message
 
     async def run_action(self):
         await self.response_channel.send(self.response)
-# pylint: enable=too-few-public-methods, super-init-not-called
+# pylint: enable=too-few-public-methods

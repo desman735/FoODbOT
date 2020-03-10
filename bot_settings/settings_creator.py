@@ -14,6 +14,3 @@ def update_settings_files():
     """
     default_settings = settings.BotSettings('settings.ini', 'mutableSettings.ini', False)
     default_settings.fix_settings_file()
-
-if __name__ == '__main__':
-    update_settings_files()
