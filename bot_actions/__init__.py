@@ -1,61 +1,94 @@
 '''File for functions, that implements bot functions'''
 
 from datetime import datetime
-from discord import Server
+import logging
+import discord
+from bot_settings import settings
+from .actions import ActionInterface
 from . import actions
 
 
-# pylint: disable=too-few-public-methods
 class MessageHandler:
     '''Class to handle commands to the bot'''
 
-    def __init__(self, command_character):
-        '''
-        command_character is a string
-        '''
-        self.command_character = command_character
+    def __init__(self, bot_settings: settings.BotSettings):
+        self.bot_settings = bot_settings
+        bot_settings.action_dict = {
+            "CountEmoji": actions.EmojiCounter,
+            "Help": actions.HelpMessage
+        }
 
-    def parse_message(self, message, settings) -> actions.ActionInterface:
+    def parse_message(self, message: discord.message.Message) -> ActionInterface:
         '''Method that parse command and returns corresponding method'''
-        print('Message ({}): {}'.format(datetime.utcnow(), message.content))
-        if not message.content.startswith(self.command_character):
+        # ignore empty messages and messages from bots
+        if not message.content or message.author.bot:
+            return None
+
+        # in case of DM to the bot
+        if not message.guild:
+            logging.info('(%s) Author: %s, Message ID: %d', datetime.utcnow(),
+                         message.author.display_name, message.id)
+            logging.warning('Message has no guild. Sending error message back to the author.')
+            return actions.SimpleResponse("Sorry, it's not enough food for me in DM!")
+
+        command_character = self.bot_settings.system_settings.command_character
+
+        if not message.content.startswith(command_character):
             # The branch that gets called
             # when there is no command character at the start of a message.
             # Use for tasks that have to check every message.
             # self.messageEmojiTester(message)
-            pass
+            return None
 
-        if message.content.startswith(self.command_character):
+        # early return in case when message not starts with command character
+        # no need for additional check
+
+        # if message.content.startswith(self.command_character):
             # The branch that gets called
             # when there is a command character at the start of a message
 
-            # todo: return different actions in different cases
-            # todo: parse for amount of days. Some other time structure?
-            action_dict = {
-                "countEmoji": actions.EmojiCounter(message.server.channels, settings.days_to_count,
-                                                   settings.animated_emoji_dict),
-                "animatedEmojis": actions.AnimatedEmojiLister(message, settings.animated_emoji_dict)
-            }
+        logging.info('(%s) Author: %s, Message ID: %d, Message: %s', datetime.utcnow(),
+                     message.author.display_name, message.id, message.content)
 
-            if message.content[1:].split(" ")[0] in action_dict.keys():
-                return action_dict[message.content[1:].split(" ")[0]]
-#             if message.content[1:].startswith("countEmoji"):
-#                 return actions.EmojiCounter(message.server.channels,
-#                                             settings.days_to_count)
+        command = str(message.content.split(command_character, 1)[1].split(" ")[0]).lower()
 
-        return actions.ActionInterface()  # todo: or None?
+        # find an action based on keywords from settings
+        action, action_settings = self.get_action_by_command(message, command)
 
-    # def message_emoji_tester(self, message):
-    #     """
-    #     Looks for custom emoji, and prints some info about it
-    #     to the command line
-    #     """
-    #     message_emoji_pattern = re.compile("(<:?[a-zA-Z]+:?[0-9]+>)")
-    #     result = message_emoji_pattern.findall(message.content)
-    #     if result:
-    #         for res in result:
-    #             print("emoji found: {}, sent in server: {}, in channel: {}, \
-    #                 by: {}".format(res, message.server,
-    #                                message.channel, message.author))
+        if not action:
+            return None
 
-# pylint: enable=too-few-public-methods
+        action_class = self.bot_settings.action_dict[action]
+        return action_class(message, self.bot_settings, action_settings)
+
+    def get_action_by_command(self, message: discord.message.Message, command: str) \
+        -> (str, settings.ActionSettings):
+        '''
+        Returns action as a string or None if command is not available.
+        If action is not available, logs why.
+        '''
+        result_action = None
+
+        for action, setup in self.bot_settings.action_settings.items():
+            # setup must contains keywords fields based on settings code
+            if command in setup.keywords:
+                result_action = action
+                break
+
+        if not result_action:
+            logging.error("Can't find action for command '%s'!", command)
+            return None, None
+
+        result_action_settings = self.bot_settings.action_settings[result_action]
+
+        if not result_action_settings.is_active:
+            logging.info("Called action '%s' is not active", result_action)
+            return None, None
+
+        if not ActionInterface.is_action_allowed(message.author, result_action_settings,
+                                                 self.bot_settings.system_settings):
+            logging.info("Called action '%s' is forbidden for user '%s'", result_action,
+                         message.author.display_name)
+            return None, None
+
+        return result_action, result_action_settings

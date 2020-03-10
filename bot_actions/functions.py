@@ -8,17 +8,18 @@ async def handle_messages(client, channel, check_time, handler, container):
     start = datetime.utcnow()
     start_time = start
     stop_time = start - check_time
-
+    id_list = []
     while start_time > stop_time:
         is_empty = True  # if there is any messages between start and stop
         # todo: look for a better way to check it
 
-        async for msg in client.logs_from(channel, before=start,
+        async for msg in channel.history(limit = None, before=start,
                                           after=stop_time):
             is_empty = False
             start = msg
-            start_time = msg.timestamp
-            if start_time > stop_time:  # todo: should it be checked?
+            start_time = msg.created_at
+            if start_time > stop_time and msg.id not in id_list:  # todo: should it be checked?
+                id_list.append(msg.id)
                 handler(msg, container, client.user.id)  # container =
             else:
                 break  # found message after stop_time
