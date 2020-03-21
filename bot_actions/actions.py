@@ -11,9 +11,10 @@ from . import functions
 class ActionInterface:
     '''Interface for async action to execute'''
 
-    def __init__(self, message: Message, bot_settings: BotSettings,
+    def __init__(self, message: Message, arguments: [str], bot_settings: BotSettings,
                  action_settings: ActionSettings):
         self.action_message = message
+        self.action_arguments = arguments
         self.bot_settings = bot_settings
         self.action_settings = action_settings
 
@@ -23,6 +24,7 @@ class ActionInterface:
 
     async def run_action(self):
         '''Method to run async action'''
+        logging.warning('Default run_action method is not overriden!')
 
     @staticmethod
     def is_action_allowed(user: User, action_settings: ActionSettings,
@@ -78,9 +80,9 @@ class EmojiCounter(ActionInterface):
         days_to_count = action_settings.settings['days_to_count']
         return f'Counts the server emoji used in the last {days_to_count} days.'
 
-    def __init__(self, message: Message, bot_settings: BotSettings,
+    def __init__(self, message: Message, arguments: [str], bot_settings: BotSettings,
                  action_settings: ActionSettings):
-        super().__init__(message, bot_settings, action_settings)
+        super().__init__(message, arguments, bot_settings, action_settings)
 
         self.days_to_count = int(self.action_settings.settings['days_to_count'])
         self.channels = []
@@ -129,7 +131,7 @@ class EmojiCounter(ActionInterface):
     async def run_action(self):
         '''Should be called once per bot request'''
         if not self.response_channel:# or not self.client:
-            logging.error('No responce channel to answer')
+            logging.error('No response channel to answer')
             return
 
         result = f'Counting emojis for the last {self.days_to_count} day(s), do not disturb...'
@@ -228,7 +230,7 @@ class HelpMessage(ActionInterface):
 class SimpleResponse(ActionInterface):
     """Sending a simple response message back to response channel"""
     def __init__(self, response_message: str):
-        super().__init__(None, None, None)
+        super().__init__(None, None, None, None)
         self.response = response_message
 
     async def run_action(self):

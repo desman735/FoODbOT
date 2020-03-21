@@ -42,7 +42,11 @@ class MessageHandler:
         logging.info('(%s) Author: %s, Message ID: %d, Message: %s', datetime.utcnow(),
                      message.author.display_name, message.id, message.content)
 
-        command = str(message.content.split(command_character, 1)[1].split(" ")[0]).lower()
+        arguments = message.content.split(" ")
+        # command is the first argument except the first character, which is the command character
+        command = arguments[0][1:].lower()
+        # remove the command from arguments
+        arguments = arguments[1:]
 
         # find an action based on keywords from settings
         action, action_settings = self.get_action_by_command(message, command)
@@ -50,8 +54,12 @@ class MessageHandler:
         if not action:
             return None
 
+        if action not in self.bot_settings.action_dict:
+            logging.error("Action %s don't have a corresponding action class!", action)
+            return None
+
         action_class = self.bot_settings.action_dict[action]
-        return action_class(message, self.bot_settings, action_settings)
+        return action_class(message, arguments, self.bot_settings, action_settings)
 
     def get_action_by_command(self, message: discord.message.Message, command: str) \
         -> (str, settings.ActionSettings):
