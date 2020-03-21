@@ -1,11 +1,11 @@
 '''File to describe the interface for action and list of actions'''
-from datetime import timedelta
+from datetime import timedelta, datetime
 import re
 import logging
 
 from discord import ChannelType, errors, Embed, Message, User
 from bot_settings.settings import BotSettings, ActionSettings, SystemSettings
-from . import functions
+from . import functions, time_utils
 
 
 class ActionInterface:
@@ -176,6 +176,65 @@ class EmojiCounter(ActionInterface):
         if output:
             output += 'The end!'
             await self.response_channel.send(output)
+
+
+class ConvertTime(ActionInterface):
+    '''Action to convert time between timezones'''
+
+    @staticmethod
+    def get_help_message(action_settings: ActionSettings) -> str:
+        return "Converts time between timezones.\n"
+            # "Use as '!convert time timezone_from timezone_to' " # +\
+            # "(for example '!convert 9:15 AM CST GMT+3')\n" +\
+            # "Time supports both 12h and 24h formats\n" +\
+            # "Use abbreviation or UTC offset to specify timezones.\n" +\
+            # "Take into account that some timezones are sharing one abbreviation. " +\
+            # "It's better to use UTC offset, if you know it"
+
+    async def run_action(self):
+        respond = self.response_channel.send
+        if len(self.action_arguments) < 3:
+            await respond('Not enough arguments.\n'
+                          'Command is used as "!convert time timezone_from timezone_to"')
+            return
+
+        timezone_to = self.action_arguments[-1]
+        timezone_from = self.action_arguments[-2]
+        time = ' '.join(self.action_arguments[0:-2])
+
+        try:
+            time = time_utils.get_datetime_from_strtime(time)
+        except ValueError:
+            await respond(f"Can't parse '{time}' time. Is it valid?")
+            return
+
+        # using current day to avoid problems with dates less than starting one
+        time = datetime.utcnow().replace(hour=time.hour, minute=time.minute)
+
+        try:
+            timezone_from = time_utils.get_timezone_from_abbr(timezone_from)
+        except KeyError as error:
+            await respond(f"Can't find timezone {error}")
+            return
+
+        except ValueError as error:
+            await respond(f"Can't parse '{timezone_from}' timezone. Is it valid?")
+            return
+
+        try:
+            timezone_to = time_utils.get_timezone_from_abbr(timezone_to)
+        except KeyError as error:
+            await respond(f"Can't find timezone {error}")
+            return
+        except ValueError:
+            await respond(f"Can't parse '{timezone_to}' timezone. Is it valid?")
+            return
+
+        time_utc = time - timezone_from.utcoffset(None)
+        result_time = time_utc + timezone_to.utcoffset(None)
+
+        await respond(f'{result_time:%H:%M} (from {timezone_from} to {timezone_to})')
+
 
 
 class HelpMessage(ActionInterface):

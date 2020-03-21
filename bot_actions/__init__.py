@@ -15,7 +15,8 @@ class MessageHandler:
         self.bot_settings = bot_settings
         bot_settings.action_dict = {
             "CountEmoji": actions.EmojiCounter,
-            "Help": actions.HelpMessage
+            "Help": actions.HelpMessage,
+            "ConvertTime": actions.ConvertTime
         }
 
     def parse_message(self, message: discord.message.Message) -> ActionInterface:
