@@ -3,8 +3,8 @@ from datetime import timedelta, datetime
 import re
 import logging
 
-from discord import ChannelType, errors, Embed, Message, User
-from bot_settings.settings import BotSettings, ActionSettings, SystemSettings
+from discord import ChannelType, errors, Embed, Message
+from bot_settings.settings import BotSettings, ActionSettings
 from . import functions, time_utils
 
 
@@ -26,49 +26,16 @@ class ActionInterface:
         '''Method to run async action'''
         logging.warning('Default run_action method is not overriden!')
 
-    @staticmethod
-    def is_action_allowed(user: User, action_settings: ActionSettings,
-                          system_settings: SystemSettings) -> bool:
-        '''
-        Checks, if the user is allowed to use an action.
-        User will be allowed to use action if they are in the whitelist and not in the blacklist.
-        Admins are allowed to use any actions.
-        '''
-
-        if user.guild_permissions.administrator:
-            return True
-
-        if str(user) in system_settings.admins:
-            return True
-
-        userspaces = [str(user)]
-        for role in user.roles:
-            userspaces.append(str(role))
-
-        is_in_whitelist = False
-        # Empty whitelist means everyone is in whitelist
-        if action_settings.call_whitelist:
-            for userspace in userspaces:
-                if userspace in action_settings.call_whitelist:
-                    is_in_whitelist = True
-                    break
-        else:
-            is_in_whitelist = True
-
-        is_in_blacklist = False
-        # Empty blacklist means noone is in blacklist
-        for userspace in userspaces:
-            if userspace in action_settings.call_blacklist:
-                is_in_blacklist = True
-                break
-
-        return is_in_whitelist and not is_in_blacklist
-
 # pylint: disable=unused-argument
     @staticmethod
     def get_help_message(action_settings: ActionSettings) -> str:
         '''Returns help message for the action'''
-        return ''
+        return 'No help message'
+
+    @staticmethod
+    def get_detailed_help_message(action_settings: ActionSettings, arguments: [str]) -> str:
+        '''Returns detailed help message for the action'''
+        return 'No detailed help message'
 #pylint: enable=unused-argument
 
 
@@ -79,6 +46,10 @@ class EmojiCounter(ActionInterface):
     def get_help_message(action_settings: ActionSettings) -> str:
         days_to_count = action_settings.settings['days_to_count']
         return f'Counts the server emoji used in the last {days_to_count} days.'
+
+    @staticmethod
+    def get_detailed_help_message(action_settings: ActionSettings, arguments: [str]) -> str:
+        return "One perfect day you'll be able to pass amount of days as argument, but not now"
 
     def __init__(self, message: Message, arguments: [str], bot_settings: BotSettings,
                  action_settings: ActionSettings):
@@ -244,7 +215,25 @@ class HelpMessage(ActionInterface):
     def get_help_message(action_settings: ActionSettings) -> str:
         return "Displays this help message."
 
+    @staticmethod
+    def get_detailed_help_message(action_settings: ActionSettings, arguments: [str]) -> str:
+        return "Displays detailed help message for the command. You're on the right way!"
+
     async def run_action(self):
+        if self.action_arguments:
+            command = self.action_arguments[0]
+            arguments = self.action_arguments[1:]
+            embed = self.make_command_help_message(command, arguments)
+            if embed:
+                await self.response_channel.send(content=None, embed=embed)
+            else:
+                await self.response_channel.send(f"Can't find help for '{command}'")
+        else:
+            embed = self.make_general_help_message()
+            await self.response_channel.send(content=None, embed=embed)
+
+    def make_general_help_message(self) -> Embed:
+        '''Creates embeded help message with short help for each command'''
         bot = self.client.user
         message_author = self.action_message.author
 
@@ -257,8 +246,8 @@ class HelpMessage(ActionInterface):
             if not action_setup.is_active:
                 continue
 
-            action_allowed = self.is_action_allowed(message_author, action_setup,
-                                                    self.bot_settings.system_settings)
+            action_allowed = functions.is_action_allowed(message_author, action_setup,
+                                                         self.bot_settings.system_settings)
             if not action_allowed:
                 continue
 
@@ -267,7 +256,29 @@ class HelpMessage(ActionInterface):
 
             embed.add_field(name=keywords, value=help_mesage)
 
-        await self.response_channel.send(content=None, embed=embed)
+        return embed
+
+    def make_command_help_message(self, command: str, arguments: [str]) -> Embed:
+        '''Creates embeded help message with detailed help for exact command'''
+        message_author = self.action_message.author
+        
+        # if command is disabled or not available for this user, action will be None
+        action, action_settings = functions.get_action_by_command(message_author, command,
+                                                                  self.bot_settings)
+
+        if action is None:
+            return None
+        if action not in self.bot_settings.action_dict:
+            logging.warning("Action %s don't have a corresponding action class!", action)
+            return None
+
+        action_class = self.bot_settings.action_dict[action]
+
+        title = f"Help with '{command}'"
+        description = f"{action_class.get_help_message(action_settings)}\n\n" +\
+                      f"{action_class.get_detailed_help_message(action_settings, arguments)}"
+
+        return Embed(title=title, description=description)
 
     def get_action_keywords_string(self, action_name: str) -> str:
         '''
