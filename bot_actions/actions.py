@@ -154,13 +154,16 @@ class ConvertTime(ActionInterface):
 
     @staticmethod
     def get_help_message(action_settings: ActionSettings) -> str:
-        return "Converts time between timezones.\n"
-            # "Use as '!convert time timezone_from timezone_to' " # +\
-            # "(for example '!convert 9:15 AM CST GMT+3')\n" +\
-            # "Time supports both 12h and 24h formats\n" +\
-            # "Use abbreviation or UTC offset to specify timezones.\n" +\
-            # "Take into account that some timezones are sharing one abbreviation. " +\
-            # "It's better to use UTC offset, if you know it"
+        return "Converts time between timezones. Use '!help convert' for details"
+
+    @staticmethod
+    def get_detailed_help_message(action_settings: ActionSettings, arguments: [str]) -> str:
+        return "Use as '!convert time timezone_from timezone_to' " +\
+               "(for example '!convert 9:15 AM CST GMT+3')\n" +\
+               "Time supports both 12h and 24h formats\n" +\
+               "Use abbreviation or UTC offset to specify timezones.\n" +\
+               "Take into account that some timezones are sharing one abbreviation. " +\
+               "It's better to use UTC offset, if you know it"
 
     async def run_action(self):
         respond = self.response_channel.send
