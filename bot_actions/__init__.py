@@ -4,7 +4,7 @@ from datetime import datetime
 import logging
 import discord
 from bot_settings import settings
-from .actions import ActionInterface
+from .functions import get_action_by_command
 from . import actions
 
 
@@ -18,8 +18,8 @@ class MessageHandler:
             "Help": actions.HelpMessage
         }
 
-    def parse_message(self, message: discord.message.Message) -> ActionInterface:
-        '''Method that parse command and returns corresponding method'''
+    def parse_message(self, message: discord.message.Message) -> actions.ActionInterface:
+        '''Method that parse command and returns the corresponding action'''
         # ignore empty messages and messages from bots
         if not message.content or message.author.bot:
             return None
@@ -42,53 +42,27 @@ class MessageHandler:
         logging.info('(%s) Author: %s, Message ID: %d, Message: %s', datetime.utcnow(),
                      message.author.display_name, message.id, message.content)
 
-        arguments = message.content.split(" ")
-        # command is the first argument except the first character, which is the command character
-        command = arguments[0][1:].lower()
-        # remove the command from arguments
-        arguments = arguments[1:]
+        command, arguments = self.extract_command_and_args(message.content)
 
         # find an action based on keywords from settings
-        action, action_settings = self.get_action_by_command(message, command)
+        action, action_settings = get_action_by_command(message.author, command, self.bot_settings)
 
         if not action:
             return None
 
         if action not in self.bot_settings.action_dict:
-            logging.error("Action %s don't have a corresponding action class!", action)
+            logging.error("Action '%s' don't have a corresponding action class!", action)
             return None
 
         action_class = self.bot_settings.action_dict[action]
         return action_class(message, arguments, self.bot_settings, action_settings)
 
-    def get_action_by_command(self, message: discord.message.Message, command: str) \
-        -> (str, settings.ActionSettings):
-        '''
-        Returns action as a string or None if command is not available.
-        If action is not available, logs why.
-        '''
-        result_action = None
-
-        for action, setup in self.bot_settings.action_settings.items():
-            # setup must contains keywords fields based on settings code
-            if command in setup.keywords:
-                result_action = action
-                break
-
-        if not result_action:
-            logging.error("Can't find action for command '%s'!", command)
-            return None, None
-
-        result_action_settings = self.bot_settings.action_settings[result_action]
-
-        if not result_action_settings.is_active:
-            logging.info("Called action '%s' is not active", result_action)
-            return None, None
-
-        if not ActionInterface.is_action_allowed(message.author, result_action_settings,
-                                                 self.bot_settings.system_settings):
-            logging.info("Called action '%s' is forbidden for user '%s'", result_action,
-                         message.author.display_name)
-            return None, None
-
-        return result_action, result_action_settings
+    @staticmethod
+    def extract_command_and_args(message: str, separator=' ') -> (str, [str]):
+        '''extracts command and argumends from the message based on separator'''
+        arguments = message.split(separator)
+        # command is the first argument except the first character, which is the command character
+        command = arguments[0][1:].lower()
+        # remove the command from arguments
+        arguments = arguments[1:]
+        return command, arguments
