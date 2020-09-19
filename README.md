@@ -5,4 +5,4 @@ To get to know all the emoji available to you use the command character (default
 
 ##Dependencies:
 * python 3.6.7
-* discord.py-1.2.5
+* discord.py-1.4.1
